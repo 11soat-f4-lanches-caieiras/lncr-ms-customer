@@ -1,0 +1,72 @@
+#valores padrões para o Helm Chart
+
+#Aplicação
+app:
+  name: lncr-app
+  replicas: 2  # Aumentando réplicas padrão
+  image:
+    repository: ${AWS_ECR_REPOSITORY}
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8080
+  containerName: lncr-app
+  baseUrl: ${LNCR_BASE_URL}
+  externalUrl: ${LNCR_EXTERNAL_URL}
+  mercadopago:
+    oauthUrl: ${MERCADOPAGO_OAUTH_URL}
+    ordersUrl: ${MERCADOPAGO_ORDERS_URL}
+    clientId: ${MERCADOPAGO_CLIENT_ID}
+    secretId: ${MERCADOPAGO_SECRET_ID}
+    posId: ${MERCADOPAGO_POS_ID}
+
+service:
+  nlb:
+    type: LoadBalancer
+    loadBalancerClass: service.k8s.aws/nlb
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+    subnets: ${EKS_SUBNETS}
+
+
+#Storage
+storage:
+  fsx:
+    server: "10.1.39.161" 
+    path: "/fsx"  
+
+
+#Deployment
+resources:
+  lanchesCaieirasApp:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+#HPA
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: 70
+
+#Secrets
+secrets:
+  oauthAdminClientId: ${LNCR_OAUTH_ADMIN_CLIENT_ID}
+  oauthAdminClientSecret: ${LNCR_OAUTH_ADMIN_CLIENT_SECRET}
+  oauthMonitorClientId: ${LNCR_OAUTH_MONITOR_CLIENT_ID}
+  oauthMonitorClientSecret: ${LNCR_OAUTH_MONITOR_CLIENT_SECRET}
+  oauthTotemClientId: ${LNCR_OAUTH_TOTEM_CLIENT_ID}
+  oauthTotemClientSecret: ${LNCR_OAUTH_TOTEM_CLIENT_SECRET}
+  oauthSecretKey: ${LNCR_OAUTH_SECRET_KEY}
+  mercadopagoClientId: ${MERCADOPAGO_CLIENT_ID}
+  mercadopagoSecretId: ${MERCADOPAGO_SECRET_ID}
+  mercadopagoPosId: ${MERCADOPAGO_POS_ID}
+  postgresUrl: ${POSTGRES_URL}
+  postgresPassword: ${POSTGRES_PASSWORD}
+  postgresUser: ${POSTGRES_USER}

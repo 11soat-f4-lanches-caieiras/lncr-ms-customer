@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: Lanches Caieiras
+    jackson:
+      default-property-inclusion: non_null
+      serialization:
+        write-dates-as-timestamps: false
+  data:
+    mongodb:
+      uri: "${MONGODB_URI:mongodb://admin:admin@localhost:27017/customers?authSource=admin}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+server:
+  port: 8080
+lncr:
+  base-url: "${LNCR_BASE_URL:http://localhost:8080}"
+  external-url: "${LNCR_EXTERNAL_URL:http://localhost:8080}"
+  customer:
+    location-prefix: "${lncr.base-url}/customers"
+
+
