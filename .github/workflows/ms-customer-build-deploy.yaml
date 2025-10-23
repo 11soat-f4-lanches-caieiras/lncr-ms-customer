@@ -73,7 +73,8 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
-              curl -V
+              which curl || sudo apt-get update && sudo apt-get install -y curl
+          
               PATH=$PWD
               set -x
               echo "Obtendo template do maven_settings.xml"
