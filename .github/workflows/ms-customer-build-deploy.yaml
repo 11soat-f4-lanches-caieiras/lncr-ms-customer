@@ -78,13 +78,13 @@ jobs:
               PATH=$PWD
               set -x
               echo "Obtendo template do maven_settings.xml"
-              curl -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
+              /usr/bin/curl -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
           
               ls 
               cat $PATH/$MAVEN_SETTINGS_PATH
               
               echo "Obtendo template do Docker File"
-              curl -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
+              /usr/bin/curl -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
           
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
               sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $PATH/$DOCKERFILE_PATH
