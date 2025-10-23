@@ -84,7 +84,7 @@ jobs:
               /usr/bin/curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
           
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
-              sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $PATH/$DOCKERFILE_PATH
+              /usr/bin/sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $PATH/$DOCKERFILE_PATH
           
               cat $PATH/$DOCKERFILE_PATH
 
