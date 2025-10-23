@@ -86,7 +86,7 @@ jobs:
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
               sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $BIN/$DOCKERFILE_PATH
           
-              cat $PATH/$DOCKERFILE_PATH
+              cat $BIN/$DOCKERFILE_PATH
 
 #      - name: Cache SonarQube packages
 #        uses: actions/cache@v4
