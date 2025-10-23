@@ -28,11 +28,11 @@ env:
   LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
   APP_DOMAIN: 'customer'
   DOCKERFILE_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/Dockerfile'
-  DOCKERFILE_PATH: 'customer/Dockerfile'
+  DOCKERFILE_PATH: "$PWD/customer/Dockerfile"
   MAVEN_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/maven_settings.xml'
-  MAVEN_SETTINGS_PATH: 'customer/maven_settings.xml'
-  MAVEN_POM_PATH: 'customer/pom.xml'
-  JACOCO_REPORT_PATH: 'customer/target/site/jacoco/jacoco.xml'
+  MAVEN_SETTINGS_PATH: "$PWD/customer/maven_settings.xml"
+  MAVEN_POM_PATH: "$PWD/customer/pom.xml"
+  JACOCO_REPORT_PATH: "$PWD/customer/target/site/jacoco/jacoco.xml"
 
 
   # secrets
