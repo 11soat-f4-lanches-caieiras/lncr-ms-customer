@@ -63,19 +63,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
-
-      - name: Instalação Curl
-        run: |
-          if command -v yum &> /dev/null; then
-            sudo yum install -y curl --allowerasing
-          elif command -v apt &> /dev/null; then
-            sudo apt update
-            sudo apt install -y curl
-          else
-            echo "Gerenciador de pacotes não encontrado."
-            exit 1
-          fi
-
       - name: Configurar templates Docker e Maven
         env:
           DOCKERFILE_TEMPLATE_URL: ${{ env.DOCKERFILE_TEMPLATE_URL }}
@@ -85,6 +72,17 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
+              echo "Instalando curl"
+          
+              if command -v yum &> /dev/null; then
+                sudo yum install -y curl --allowerasing
+              elif command -v apt &> /dev/null; then
+                sudo apt update
+                sudo apt install -y curl
+              else
+                echo "Gerenciador de pacotes não encontrado."
+                exit 1
+              fi
           
               PATH=$PWD
               set -x
