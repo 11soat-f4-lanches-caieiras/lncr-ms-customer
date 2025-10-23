@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -52,35 +52,35 @@ class CustomerRestControllerImplTest {
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(customerDTO, response.getBody().get_content());
-        assertTrue(response.getHeaders().getLocation().toString().contains("/customers"));
+        assertEquals(customerDTO, response.getBody().getContent());
+        assertTrue(Objects.requireNonNull(response.getHeaders().getLocation()).toString().contains("/customers"));
         verify(customerController).create(customerDTO);
     }
 
     @Test
     void deveRetornarTodosCustomersComLimite() {
         List<CustomerDTO> customers = List.of(customerDTO);
-        when(customerController.getAll(Optional.of(10))).thenReturn(customers);
+        when(customerController.getAll(10)).thenReturn(customers);
 
-        ResponseEntity<ResponseListModel<CustomerDTO>> response = customerRestController.getAllCustomers(Optional.of(10));
+        ResponseEntity<ResponseListModel<CustomerDTO>> response = customerRestController.getAllCustomers(10);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(customers, response.getBody().get_content());
-        verify(customerController).getAll(Optional.of(10));
+        assertEquals(customers, response.getBody().getContent());
+        verify(customerController).getAll(10);
     }
 
     @Test
     void deveRetornarTodosCustomersSemLimite() {
         List<CustomerDTO> customers = List.of(customerDTO);
-        when(customerController.getAll(Optional.empty())).thenReturn(customers);
+        when(customerController.getAll(null)).thenReturn(customers);
 
-        ResponseEntity<ResponseListModel<CustomerDTO>> response = customerRestController.getAllCustomers(Optional.empty());
+        ResponseEntity<ResponseListModel<CustomerDTO>> response = customerRestController.getAllCustomers(null);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(customers, response.getBody().get_content());
-        verify(customerController).getAll(Optional.empty());
+        assertEquals(customers, response.getBody().getContent());
+        verify(customerController).getAll(null);
     }
 
     @Test
@@ -91,7 +91,7 @@ class CustomerRestControllerImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(customerDTO, response.getBody().get_content());
+        assertEquals(customerDTO, response.getBody().getContent());
         verify(customerController).getById(1);
     }
 
@@ -103,7 +103,7 @@ class CustomerRestControllerImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(customerDTO, response.getBody().get_content());
+        assertEquals(customerDTO, response.getBody().getContent());
         verify(customerController).getByDocumentNumber("12345678909");
     }
 
@@ -117,7 +117,7 @@ class CustomerRestControllerImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(customers, response.getBody().get_content());
+        assertEquals(customers, response.getBody().getContent());
         verify(customerController).getByIdList(ids);
     }
 
@@ -132,7 +132,7 @@ class CustomerRestControllerImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(updatedCustomer, response.getBody().get_content());
+        assertEquals(updatedCustomer, response.getBody().getContent());
         verify(customerController).partialUpdateById(1, customerDTO);
     }
 
@@ -144,7 +144,7 @@ class CustomerRestControllerImplTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertNull(response.getBody().get_content());
+        assertNull(response.getBody().getContent());
         verify(customerController).delete(1);
     }
 }

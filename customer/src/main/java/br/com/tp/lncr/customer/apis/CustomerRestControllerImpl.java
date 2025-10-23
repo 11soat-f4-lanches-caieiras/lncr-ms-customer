@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @RestController
@@ -39,8 +38,8 @@ public class CustomerRestControllerImpl implements CustomerRestController {
 
     @Override
     @GetMapping
-    public ResponseEntity<ResponseListModel<CustomerDTO>> getAllCustomers(@RequestParam("_limit") Optional<Integer> _limit) {
-        List<CustomerDTO> listCustomerDTO = this.customerController.getAll(_limit);
+    public ResponseEntity<ResponseListModel<CustomerDTO>> getAllCustomers(@RequestParam(value = "limit", required = false) Integer limit) {
+        List<CustomerDTO> listCustomerDTO = this.customerController.getAll(limit);
         return ResponseEntityModelUtil.listOK(listCustomerDTO);
     }
 
@@ -48,14 +47,14 @@ public class CustomerRestControllerImpl implements CustomerRestController {
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<CustomerDTO>> getCustomerById(@PathVariable("id") Integer id) {
         CustomerDTO customerDTO = this.customerController.getById(id);
-        return ResponseEntityModelUtil.OK(customerDTO);
+        return ResponseEntityModelUtil.ok(customerDTO);
     }
 
     @Override
     @GetMapping("/documentNumber/{documentNumber}")
     public ResponseEntity<ResponseModel<CustomerDTO>> getCustomerByDocumentNumber(@PathVariable("documentNumber") String documentNumber) {
         CustomerDTO customerDTO = this.customerController.getByDocumentNumber(documentNumber);
-        return ResponseEntityModelUtil.OK(customerDTO);
+        return ResponseEntityModelUtil.ok(customerDTO);
     }
 
     @Override
@@ -69,13 +68,13 @@ public class CustomerRestControllerImpl implements CustomerRestController {
     @PatchMapping("/{id}")
     public ResponseEntity<ResponseModel<CustomerDTO>> partialUpdateCustomer(@RequestBody CustomerDTO customerDTO, @PathVariable("id") Integer id) {
         customerDTO = this.customerController.partialUpdateById(id, customerDTO);
-        return ResponseEntityModelUtil.OK(customerDTO);
+        return ResponseEntityModelUtil.ok(customerDTO);
     }
 
     @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<CustomerDTO>> deleteCustomer(@PathVariable("id") Integer id) {
         this.customerController.delete(id);
-        return ResponseEntityModelUtil.OK(null);
+        return ResponseEntityModelUtil.ok(null);
     }
 }
