@@ -64,6 +64,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
+
       - name: Configurar templates Docker e Maven
         env:
           DOCKERFILE_TEMPLATE_URL: ${{ env.DOCKERFILE_TEMPLATE_URL }}
@@ -73,7 +74,6 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
-          
               BIN=$PWD
               echo "Obtendo template do maven_settings.xml"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
@@ -88,40 +88,40 @@ jobs:
           
               cat $BIN/$DOCKERFILE_PATH
 
-#      - name: Cache SonarQube packages
-#        uses: actions/cache@v4
-#        with:
-#          path: ~/.sonar/cache
-#          key: ${{ runner.os }}-sonar
-#          restore-keys: ${{ runner.os }}-sonar
-#
-#      - name: Análise SonarQube
-#        env:
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#          MAVEN_SETTINGS_PATH: ${{ env.MAVEN_SETTINGS_PATH }}
-#          MAVEN_POM_PATH: ${{ env.MAVEN_POM_PATH }}
-#        run: |
-#          mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -f $MAVEN_POM_PATH -Pcoverage
-#
-#      - name: Cobertura de Testes Jacoco & Sonar
-#        env:
-#          JACOCO_REPORT_PATH: ${{ env.JACOCO_REPORT_PATH }}
-#        run: |
-#          if [ -f $JACOCO_REPORT_PATH ]; then
-#            COVERED=$(grep -oP 'counter type="INSTRUCTION"[^>]+covered="\K[0-9]+' $JACOCO_REPORT_PATH | awk '{s+=$1} END {print s}')
-#            MISSED=$(grep -oP 'counter type="INSTRUCTION"[^>]+missed="\K[0-9]+' $JACOCO_REPORT_PATH | awk '{s+=$1} END {print s}')
-#            if [[ "$COVERED" =~ ^[0-9]+$ ]] && [[ "$MISSED" =~ ^[0-9]+$ ]] && [ $((COVERED + MISSED)) -ne 0 ]; then
-#              PERCENT=$(awk "BEGIN {printf \"%.2f\", 100 * $COVERED / ($COVERED + $MISSED)}")
-#              echo "Cobertura de instruções: $PERCENT%"
-#              echo "COVERAGE_PERCENTAGE=$PERCENT" >> $GITHUB_ENV
-#              echo "MISSED=$MISSED" >> $GITHUB_ENV
-#            else
-#              echo "Valores de cobertura não encontrados. Falhando o build."
-#              exit 1
-#            fi
-#          else
-#            echo "Relatório Jacoco não encontrado."
-#          fi
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Análise SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          MAVEN_SETTINGS_PATH: ${{ env.MAVEN_SETTINGS_PATH }}
+          MAVEN_POM_PATH: ${{ env.MAVEN_POM_PATH }}
+        run: |
+          mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -f $MAVEN_POM_PATH -Pcoverage
+
+      - name: Cobertura de Testes Jacoco & Sonar
+        env:
+          JACOCO_REPORT_PATH: ${{ env.JACOCO_REPORT_PATH }}
+        run: |
+          if [ -f $JACOCO_REPORT_PATH ]; then
+            COVERED=$(grep -oP 'counter type="INSTRUCTION"[^>]+covered="\K[0-9]+' $JACOCO_REPORT_PATH | awk '{s+=$1} END {print s}')
+            MISSED=$(grep -oP 'counter type="INSTRUCTION"[^>]+missed="\K[0-9]+' $JACOCO_REPORT_PATH | awk '{s+=$1} END {print s}')
+            if [[ "$COVERED" =~ ^[0-9]+$ ]] && [[ "$MISSED" =~ ^[0-9]+$ ]] && [ $((COVERED + MISSED)) -ne 0 ]; then
+              PERCENT=$(awk "BEGIN {printf \"%.2f\", 100 * $COVERED / ($COVERED + $MISSED)}")
+              echo "Cobertura de instruções: $PERCENT%"
+              echo "COVERAGE_PERCENTAGE=$PERCENT" >> $GITHUB_ENV
+              echo "MISSED=$MISSED" >> $GITHUB_ENV
+            else
+              echo "Valores de cobertura não encontrados. Falhando o build."
+              exit 1
+            fi
+          else
+            echo "Relatório Jacoco não encontrado."
+          fi
 #
 #      - name: Login no Docker Hub
 #        uses: docker/login-action@v3
@@ -129,33 +129,33 @@ jobs:
 #          username: ${{ env.DOCKER_USERNAME }}
 #          password: ${{ env.DOCKER_PASSWORD }}
 #
-#      - name: Definir Caminhos e Variáveis de Ambiente
-#        id: set-vars
-#        run: |
-#          echo "Compondo variáveis de ambiente..."
-#          DOCKERFILE_PATH=$PWD/app/Dockerfile
-#          COMMIT_HASH=$(git rev-parse --short HEAD)
-#          IMAGE_NAME=lncr-app-$COMMIT_HASH
-#
-#          echo "Exportando variáveis de ambiente..."
-#          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-#          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-#          echo "DOCKERFILE_PATH=$DOCKERFILE_PATH" >> $GITHUB_ENV
-#
-#          echo "Exportando variáveis de output..."
-#          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
-#          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_OUTPUT
+      - name: Definir Caminhos e Variáveis de Ambiente
+        id: set-vars
+        run: |
+          echo "Compondo variáveis de ambiente..."
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          IMAGE_NAME=lncr-app-$COMMIT_HASH
+
+          echo "Exportando variáveis de ambiente..."
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
+         
+
+          echo "Exportando variáveis de output..."
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_OUTPUT
 #
 #      - name: Login no Amazon ECR
 #        id: login-ecr
 #        uses: aws-actions/amazon-ecr-login@v2
 #
-#      - name: Construir imagem Docker
-#        run: |
-#          echo "Criando imagem da aplicação..."
-#          docker build -t ${{ env.IMAGE_NAME }} -f ${{ env.DOCKERFILE_PATH }} . \
-#            --build-arg LNCR_MAVEN_ACTOR=${{ env.LNCR_MAVEN_ACTOR }} \
-#            --build-arg LNCR_MAVEN_PAT=${{ env.LNCR_MAVEN_PAT }}
+      - name: Construir imagem Docker
+        env:
+            DOCKERFILE_PATH: ${{ env.DOCKERFILE_PATH }}
+        run: |
+          BIN=$PWD
+          echo "Criando imagem da aplicação..."
+          docker build -t ${{ env.IMAGE_NAME }} -f $BIN/$DOCKERFILE_PATH .
 #
 #      - name: Marcar imagem para ECR
 #        run: |

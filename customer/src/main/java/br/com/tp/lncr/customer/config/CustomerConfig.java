@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class CustomerConfig {
     private String locationPrefix;
 
-    public CustomerConfig() {}
+    private CustomerConfig() {}
     public String getLocationPrefix() {
         return locationPrefix;
     }

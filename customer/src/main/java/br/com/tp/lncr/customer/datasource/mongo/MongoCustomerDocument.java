@@ -3,14 +3,11 @@ package br.com.tp.lncr.customer.datasource.mongo;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "customers")
-@CompoundIndexes({
-        @CompoundIndex(name = "name_email_idx", def = "{'documentNumber': 1, 'email': 1}")
-})
+@CompoundIndex(name = "name_email_idx", def = "{'documentNumber': 1, 'email': 1}")
 public class MongoCustomerDocument {
     @Id
     Integer id;

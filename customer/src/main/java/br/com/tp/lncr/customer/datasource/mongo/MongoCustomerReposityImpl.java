@@ -40,8 +40,8 @@ public class MongoCustomerReposityImpl implements CustomerDatabase {
     }
 
     @Override
-    public List<CustomerDTO> findAll(Integer _limit) {
-        return mongoCustomerRepository.findAll(Pageable.ofSize(_limit))
+    public List<CustomerDTO> findAll(Integer limit) {
+        return mongoCustomerRepository.findAll(Pageable.ofSize(limit))
                 .stream()
                 .map(mongoCustomerMapper::documentCustomerToDTO)
                 .toList();
