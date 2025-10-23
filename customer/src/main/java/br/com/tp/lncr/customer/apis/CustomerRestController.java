@@ -8,13 +8,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface CustomerRestController {
 
     ResponseEntity<ResponseModel<CustomerDTO>> createCustomer(@RequestBody CustomerDTO customerDto);
 
-    ResponseEntity<ResponseListModel<CustomerDTO>> getAllCustomers(Optional<Integer> _limit);
+    ResponseEntity<ResponseListModel<CustomerDTO>> getAllCustomers(Integer limit);
 
     ResponseEntity<ResponseModel<CustomerDTO>> getCustomerById(@PathVariable Integer id);
 
