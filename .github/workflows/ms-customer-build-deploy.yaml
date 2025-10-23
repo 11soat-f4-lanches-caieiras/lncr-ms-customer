@@ -73,12 +73,17 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
+              # Instalar curl se não estiver disponível
+              if ! command -v curl &> /dev/null; then
+                  yum install -y curl || apt-get update && apt-get install -y curl
+              fi
+          
               PATH=$PWD
               set -x
               echo "Obtendo template do maven_settings.xml"
-              wget --header "Authorization: token ${LNCR_MAVEN_PAT}" \
-              -O $PATH/$MAVEN_SETTINGS_PATH \
-              $MAVEN_TEMPLATE_URL 
+              curl --request GET $MAVEN_TEMPLATE_URL \
+              -H "Authorization: token ${LNCR_MAVEN_PAT}" \
+              -O $PATH/$MAVEN_SETTINGS_PATH
           
               ls 
               cat $PATH/$MAVEN_SETTINGS_PATH
