@@ -77,7 +77,8 @@ jobs:
               curl --silent --location --request GET $MAVEN_TEMPLATE_URL \
               --header 'Authorization: token ${LNCR_MAVEN_PAT}' \
               --output $MAVEN_SETTINGS_PATH
-              
+          
+              cat $MAVEN_SETTINGS_PATH
               
               echo "Obtendo template do Docker File"
               curl --silent --location --request GET $DOCKERFILE_TEMPLATE_URL \
@@ -86,6 +87,8 @@ jobs:
           
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
               sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $DOCKERFILE_PATH
+          
+              cat $$DOCKERFILE_PATH
 
 #      - name: Cache SonarQube packages
 #        uses: actions/cache@v4
