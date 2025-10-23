@@ -47,7 +47,7 @@ env:
 
 jobs:
   build-and-upload:
-    name: Construir e Fazer Upload da Imagem Docker para ECR
+    name: Validação Construção e Upload da Imagem Docker
     runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
     #Disparado via repository_dispatch do repositório lncr-iac
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch') && !inputs.only-helm-deploy }}
@@ -73,6 +73,7 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
+              set -x
               echo "Obtendo template do maven_settings.xml"
               curl --silent --location --request GET $MAVEN_TEMPLATE_URL \
               --header 'Authorization: token ${LNCR_MAVEN_PAT}' \
@@ -88,7 +89,7 @@ jobs:
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
               sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $DOCKERFILE_PATH
           
-              cat $$DOCKERFILE_PATH
+              cat $DOCKERFILE_PATH
 
 #      - name: Cache SonarQube packages
 #        uses: actions/cache@v4
