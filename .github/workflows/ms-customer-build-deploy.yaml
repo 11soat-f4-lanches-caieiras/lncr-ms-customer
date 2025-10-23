@@ -64,6 +64,11 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Instalação Curl
+        run: |
+          sudo apt update
+          sudo apt install -y curl
+
       - name: Configurar templates Docker e Maven
         env:
           DOCKERFILE_TEMPLATE_URL: ${{ env.DOCKERFILE_TEMPLATE_URL }}
@@ -73,8 +78,6 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
-              
-              yum install -y curl || apt-get update && apt-get install -y curl
           
               PATH=$PWD
               set -x
