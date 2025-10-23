@@ -26,13 +26,13 @@ env:
   EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
   LNCR_BASE_URL: ${{ vars.LNCR_BASE_URL }}
   LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
-  APP_DOMAIN: 'customer'
+  MS_DOMAIN: ${{ vars.MS_DOMAIN }}
   DOCKERFILE_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/Dockerfile'
-  DOCKERFILE_PATH: "customer/Dockerfile"
+  DOCKERFILE_PATH: "${{ vars.MS_DOMAIN }}/Dockerfile"
   MAVEN_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/maven_settings.xml'
-  MAVEN_SETTINGS_PATH: "customer/maven_settings.xml"
-  MAVEN_POM_PATH: "$customer/pom.xml"
-  JACOCO_REPORT_PATH: "customer/target/site/jacoco/jacoco.xml"
+  MAVEN_SETTINGS_PATH: "${{ vars.MS_DOMAIN }}/maven_settings.xml"
+  MAVEN_POM_PATH: "${{ vars.MS_DOMAIN }}/pom.xml"
+  JACOCO_REPORT_PATH: "${{ vars.MS_DOMAIN }}/target/site/jacoco/jacoco.xml"
 
 
   # secrets
@@ -71,7 +71,7 @@ jobs:
           DOCKERFILE_PATH: ${{ env.DOCKERFILE_PATH }}
           MAVEN_TEMPLATE_URL: ${{ env.MAVEN_TEMPLATE_URL }}
           MAVEN_SETTINGS_PATH: ${{ env.MAVEN_SETTINGS_PATH }}
-          APP_DOMAIN: ${{ env.APP_DOMAIN }}
+          MS_DOMAIN: ${{ env.MS_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
               BIN=$PWD
@@ -83,8 +83,8 @@ jobs:
               echo "Obtendo template do Docker File"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
           
-              echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
-              sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $BIN/$DOCKERFILE_PATH
+              echo "Configurando Dockerfile para o dominio $MS_DOMAIN"
+              sed -i "s/##MS_DOMAIN##/$MS_DOMAIN/g" $BIN/$DOCKERFILE_PATH
           
               cat $BIN/$DOCKERFILE_PATH
 
@@ -101,7 +101,10 @@ jobs:
           MAVEN_SETTINGS_PATH: ${{ env.MAVEN_SETTINGS_PATH }}
           MAVEN_POM_PATH: ${{ env.MAVEN_POM_PATH }}
         run: |
-          mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -f $MAVEN_POM_PATH -Pcoverage
+          mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          -s $MAVEN_SETTINGS_PATH \
+          -f $MAVEN_POM_PATH \ 
+          -Pcoverage
 
       - name: Cobertura de Testes Jacoco & Sonar
         env:
@@ -153,9 +156,8 @@ jobs:
         env:
             DOCKERFILE_PATH: ${{ env.DOCKERFILE_PATH }}
         run: |
-          BIN=$PWD
           echo "Criando imagem da aplicação..."
-          docker build -t ${{ env.IMAGE_NAME }} -f $BIN/$DOCKERFILE_PATH .
+          docker build -t ${{ env.IMAGE_NAME }} -f $DOCKERFILE_PATH .
 #
 #      - name: Marcar imagem para ECR
 #        run: |
