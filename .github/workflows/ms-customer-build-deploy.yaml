@@ -73,10 +73,8 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
-              # Instalar curl se não estiver disponível
-              if ! command -v curl &> /dev/null; then
-                  yum install -y curl || apt-get update && apt-get install -y curl
-              fi
+              
+              yum install -y curl || apt-get update && apt-get install -y curl
           
               PATH=$PWD
               set -x
