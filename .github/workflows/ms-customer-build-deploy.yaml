@@ -76,14 +76,12 @@ jobs:
               set -x
               echo "Obtendo template do maven_settings.xml"
               curl --silent --location --request GET $MAVEN_TEMPLATE_URL \
-              --header 'Authorization: token ${LNCR_MAVEN_PAT}' \
               --output $MAVEN_SETTINGS_PATH
           
               cat $MAVEN_SETTINGS_PATH
               
               echo "Obtendo template do Docker File"
               curl --silent --location --request GET $DOCKERFILE_TEMPLATE_URL \
-              --header 'Authorization: token ${LNCR_MAVEN_PAT}' \
               --output $DOCKERFILE_PATH
           
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
