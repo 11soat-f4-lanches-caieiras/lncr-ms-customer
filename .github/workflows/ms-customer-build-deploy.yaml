@@ -103,7 +103,7 @@ jobs:
         run: |
           mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
           -s ${MAVEN_SETTINGS_PATH} \
-          -f ${MAVEN_POM_PATH} \ 
+          -f ${MAVEN_POM_PATH} \
           -Pcoverage
 
       - name: Cobertura de Testes Jacoco & Sonar
