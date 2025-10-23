@@ -48,7 +48,8 @@ env:
 jobs:
   build-and-upload:
     name: Validação Construção e Upload da Imagem Docker
-    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ubuntu-latest
+    #runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
     #Disparado via repository_dispatch do repositório lncr-iac
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch') && !inputs.only-helm-deploy }}
     environment:
@@ -72,32 +73,17 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
-              echo "Instalando curl"
-          
-              if command -v yum &> /dev/null; then
-                sudo yum install -y curl --allowerasing
-              elif command -v apt &> /dev/null; then
-                sudo apt update
-                sudo apt install -y curl
-              else
-                echo "Gerenciador de pacotes não encontrado."
-                exit 1
-              fi
-          
+              curl -V
               PATH=$PWD
               set -x
               echo "Obtendo template do maven_settings.xml"
-              curl --request GET $MAVEN_TEMPLATE_URL \
-              -H "Authorization: token ${LNCR_MAVEN_PAT}" \
-              -O $PATH/$MAVEN_SETTINGS_PATH
+              curl -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
           
               ls 
               cat $PATH/$MAVEN_SETTINGS_PATH
               
               echo "Obtendo template do Docker File"
-              curl --request GET $DOCKERFILE_TEMPLATE_URL \
-              -H "Authorization: token ${LNCR_MAVEN_PAT}" \
-              -O $PATH/$DOCKERFILE_PATH
+              curl -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
           
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
               sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $PATH/$DOCKERFILE_PATH
