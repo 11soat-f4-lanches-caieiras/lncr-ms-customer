@@ -79,7 +79,7 @@ jobs:
               --header "Authorization: token ${LNCR_MAVEN_PAT}" \
               --output $MAVEN_SETTINGS_PATH
           
-              ls
+              ls 
               cat $MAVEN_SETTINGS_PATH
               
               echo "Obtendo template do Docker File"
