@@ -66,8 +66,15 @@ jobs:
 
       - name: Instalação Curl
         run: |
-          sudo apt update
-          sudo apt install -y curl
+          if command -v yum &> /dev/null; then
+            sudo yum install -y curl
+          elif command -v apt &> /dev/null; then
+            sudo apt update
+            sudo apt install -y curl
+          else
+            echo "Gerenciador de pacotes não encontrado."
+            exit 1
+          fi
 
       - name: Configurar templates Docker e Maven
         env:
