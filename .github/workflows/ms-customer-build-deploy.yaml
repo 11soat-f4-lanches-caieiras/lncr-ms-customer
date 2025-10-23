@@ -67,7 +67,7 @@ jobs:
       - name: Instalação Curl
         run: |
           if command -v yum &> /dev/null; then
-            sudo yum install -y curl
+            sudo yum install -y curl --allowerasing
           elif command -v apt &> /dev/null; then
             sudo apt update
             sudo apt install -y curl
