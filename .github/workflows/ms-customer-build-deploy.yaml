@@ -28,11 +28,11 @@ env:
   LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
   APP_DOMAIN: 'customer'
   DOCKERFILE_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/Dockerfile'
-  DOCKERFILE_PATH: "${PWD}/customer/Dockerfile"
+  DOCKERFILE_PATH: "customer/Dockerfile"
   MAVEN_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/maven_settings.xml'
   MAVEN_SETTINGS_PATH: "${PWD}/customer/maven_settings.xml"
-  MAVEN_POM_PATH: "${PWD}/customer/pom.xml"
-  JACOCO_REPORT_PATH: "${PWD}/customer/target/site/jacoco/jacoco.xml"
+  MAVEN_POM_PATH: "$customer/pom.xml"
+  JACOCO_REPORT_PATH: "customer/target/site/jacoco/jacoco.xml"
 
 
   # secrets
@@ -73,24 +73,25 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
+              PATH=$PWD
               set -x
               echo "Obtendo template do maven_settings.xml"
               curl $MAVEN_TEMPLATE_URL \
               --header "Authorization: token ${LNCR_MAVEN_PAT}" \
-              --output $MAVEN_SETTINGS_PATH
+              --output $PATH/$MAVEN_SETTINGS_PATH
           
               ls 
-              cat $MAVEN_SETTINGS_PATH
+              cat $PATH/$MAVEN_SETTINGS_PATH
               
               echo "Obtendo template do Docker File"
               curl $DOCKERFILE_TEMPLATE_URL \
               --header "Authorization: token ${LNCR_MAVEN_PAT}" \
-              --output $DOCKERFILE_PATH
+              --output $PATH/$DOCKERFILE_PATH
           
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
-              sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $DOCKERFILE_PATH
+              sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $PATH/$DOCKERFILE_PATH
           
-              cat $DOCKERFILE_PATH
+              cat $PATH/$DOCKERFILE_PATH
 
 #      - name: Cache SonarQube packages
 #        uses: actions/cache@v4
