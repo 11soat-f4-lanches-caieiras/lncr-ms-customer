@@ -73,18 +73,18 @@ jobs:
           APP_DOMAIN: ${{ env.APP_DOMAIN }}
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
         run: |
-              
-              PATH=$PWD
-              echo "Obtendo template do maven_settings.xml"
-              /usr/bin/curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
           
-              cat $PATH/$MAVEN_SETTINGS_PATH
+              BIN=$PWD
+              echo "Obtendo template do maven_settings.xml"
+              curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
+          
+              cat $BIN/$MAVEN_SETTINGS_PATH
               
               echo "Obtendo template do Docker File"
-              /usr/bin/curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $PATH/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
+              curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
           
               echo "Configurando Dockerfile para o dominio $APP_DOMAIN"
-              /usr/bin/sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $PATH/$DOCKERFILE_PATH
+              sed -i "s/##APP_DOMAIN##/$APP_DOMAIN/g" $BIN/$DOCKERFILE_PATH
           
               cat $PATH/$DOCKERFILE_PATH
 
