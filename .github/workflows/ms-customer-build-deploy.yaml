@@ -21,18 +21,18 @@ on:
 
 env:
   #variáveis
-  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
   AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+  DOCKERFILE_PATH: "${{ vars.MS_DOMAIN }}/Dockerfile"
+  DOCKERFILE_TEMPLATE_URL: ${{ vars.DOCKERFILE_TEMPLATE_URL }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
   EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
+  JACOCO_REPORT_PATH: "${{ vars.MS_DOMAIN }}/target/site/jacoco/jacoco.xml"
   LNCR_BASE_URL: ${{ vars.LNCR_BASE_URL }}
   LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
-  MS_DOMAIN: ${{ vars.MS_DOMAIN }}
-  DOCKERFILE_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/Dockerfile'
-  DOCKERFILE_PATH: "${{ vars.MS_DOMAIN }}/Dockerfile"
-  MAVEN_TEMPLATE_URL: 'https://raw.githubusercontent.com/11soat-f4-lanches-caieiras/lncr-commons/master/templates/maven_settings.xml'
-  MAVEN_SETTINGS_PATH: "${{ vars.MS_DOMAIN }}/maven_settings.xml"
   MAVEN_POM_PATH: "${{ vars.MS_DOMAIN }}/pom.xml"
-  JACOCO_REPORT_PATH: "${{ vars.MS_DOMAIN }}/target/site/jacoco/jacoco.xml"
+  MAVEN_SETTINGS_PATH: "${{ vars.MS_DOMAIN }}/maven_settings.xml"
+  MAVEN_TEMPLATE_URL: ${{ vars.MAVEN_TEMPLATE_URL }}
+  MS_DOMAIN: ${{ vars.MS_DOMAIN }}
 
 
   # secrets
@@ -78,15 +78,11 @@ jobs:
               echo "Obtendo template do maven_settings.xml"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
           
-              cat $BIN/$MAVEN_SETTINGS_PATH
-              
               echo "Obtendo template do Docker File"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
           
               echo "Configurando Dockerfile para o dominio $MS_DOMAIN"
               sed -i "s/##MS_DOMAIN##/$MS_DOMAIN/g" $BIN/$DOCKERFILE_PATH
-          
-              cat $BIN/$DOCKERFILE_PATH
 
       - name: Cache SonarQube packages
         uses: actions/cache@v4
