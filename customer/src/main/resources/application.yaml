@@ -1,13 +1,10 @@
 spring:
   application:
-    name: Lanches Caieiras
+    name: lncr-ms-customer
     jackson:
       default-property-inclusion: non_null
       serialization:
         write-dates-as-timestamps: false
-  data:
-    mongodb:
-      uri: "${MONGODB_URI}"
 
 management:
   endpoints:
@@ -23,6 +20,6 @@ lncr:
   internal-url: "${LNCR_INTERNAL_URL:http://localhost:8080}"
   external-url: "${LNCR_EXTERNAL_URL:http://localhost:8080}"
   customer:
-    location-prefix: "${internal-url}/customers"
+    location-prefix: "${external-url}/customers"
 
 
