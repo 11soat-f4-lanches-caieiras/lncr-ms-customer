@@ -1,4 +1,4 @@
-package br.com.tp.lncr.customer.config;
+package br.com.tp.lncr.customer.configs;
 
 import br.com.tp.lncr.core.adapters.customer.CustomerControllerImpl;
 import br.com.tp.lncr.core.adapters.customer.CustomerMapper;

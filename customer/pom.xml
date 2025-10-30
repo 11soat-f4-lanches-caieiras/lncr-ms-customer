@@ -43,7 +43,7 @@
         <sonar.scm.disabled>true</sonar.scm.disabled>
         <sonar.coverage.exclusions>
             br.com.tp.lncr.customer.apis.CustomerRestController,
-            br.com.tp.lncr.customer.config.CustomerConfig,
+            br.com.tp.lncr.customer.configs.CustomerConfig,
             br.com.tp.lncr.customer.datasource.mongo.MongoCustomerRepository
         </sonar.coverage.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>
@@ -168,6 +168,28 @@
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>4.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>7.14.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>7.14.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <version>1.9.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
     </dependencies>
     <build>

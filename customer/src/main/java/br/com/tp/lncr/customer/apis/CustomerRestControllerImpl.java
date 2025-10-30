@@ -3,7 +3,7 @@ package br.com.tp.lncr.customer.apis;
 import br.com.tp.lncr.commons.model.ResponseListModel;
 import br.com.tp.lncr.commons.model.ResponseModel;
 import br.com.tp.lncr.commons.utils.ResponseEntityModelUtil;
-import br.com.tp.lncr.customer.config.CustomerConfig;
+import br.com.tp.lncr.customer.configs.CustomerConfig;
 import br.com.tp.lncr.customer.datasource.mongo.MongoCustomerReposityImpl;
 import br.com.tp.lncr.core.dtos.customer.CustomerDTO;
 import br.com.tp.lncr.core.interfaces.customer.CustomerController;
