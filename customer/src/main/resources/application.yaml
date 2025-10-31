@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: lncr-ms-customer
+    jackson:
+      default-property-inclusion: non_null
+      serialization:
+        write-dates-as-timestamps: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+server:
+  port: 8080
+lncr:
+  internal-url: "${LNCR_INTERNAL_URL:http://localhost:8080}"
+  external-url: "${LNCR_EXTERNAL_URL:http://localhost:8080}"
+  customer:
+    location-prefix: "${external-url}/customers"
+
+
