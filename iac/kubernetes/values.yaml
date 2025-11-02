@@ -2,15 +2,16 @@
 
 #Aplicação
 app:
-  name: lncr-app
-  replicas: 2  # Aumentando réplicas padrão
+  name: lncr-ms-customer
+  replicas: 2
   image:
     repository: ${AWS_ECR_REPOSITORY}
     tag: latest
     pullPolicy: IfNotPresent
   port: 8080
-  containerName: lncr-app
+  containerName: lncr-ms-customer
   baseUrl: ${LNCR_BASE_URL}
+  internalUrl: ${LNCR_INTERNAL_URL}
   externalUrl: ${LNCR_EXTERNAL_URL}
   mercadopago:
     oauthUrl: ${MERCADOPAGO_OAUTH_URL}
@@ -19,15 +20,17 @@ app:
     secretId: ${MERCADOPAGO_SECRET_ID}
     posId: ${MERCADOPAGO_POS_ID}
 
+#Service
 service:
-  nlb:
-    type: LoadBalancer
-    loadBalancerClass: service.k8s.aws/nlb
-    port: 80
-    targetPort: 8080
-    protocol: TCP
-    name: http
-    subnets: ${EKS_SUBNETS}
+  port: 80
+  targetPort: 8080
+
+#Ingress
+ingress:
+  host: ${INGRESS_HOST}
+  scheme: ${INGRESS_SCHEME:internet-facing}
+  subnets: ${INGRESS_SUBNETS}
+  certificateArn: ${CERTIFICATE_ARN:}
 
 
 #Storage
@@ -70,3 +73,7 @@ secrets:
   postgresUrl: ${POSTGRES_URL}
   postgresPassword: ${POSTGRES_PASSWORD}
   postgresUser: ${POSTGRES_USER}
+  mongoUri: ${MONGO_URI}
+  mongoDatabase: ${MONGO_DATABASE}
+  mongoUsername: ${MONGO_USERNAME}
+  mongoPassword: ${MONGO_PASSWORD}

@@ -31,6 +31,11 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.app.name }}-config
                   key: LNCR_BASE_URL
+            - name: LNCR_INTERNAL_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.app.name }}-config
+                  key: LNCR_INTERNAL_URL
             - name: LNCR_EXTERNAL_URL
               valueFrom:
                 configMapKeyRef:
@@ -112,6 +117,26 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.name }}-secret
                   key: POSTGRES_USER
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: MONGO_URI
+            - name: MONGO_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: MONGO_DATABASE
+            - name: MONGO_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: MONGO_USERNAME
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: MONGO_PASSWORD
           volumeMounts:
             - name: images-storage
               mountPath: /app/images
