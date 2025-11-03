@@ -102,21 +102,7 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.name }}-secret
                   key: MERCADOPAGO_SECRET_ID
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.name }}-secret
-                  key: POSTGRES_PASSWORD
-            - name: POSTGRES_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.name }}-secret
-                  key: POSTGRES_URL
-            - name: POSTGRES_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.name }}-secret
-                  key: POSTGRES_USER
+
             - name: MONGO_URI
               valueFrom:
                 secretKeyRef:

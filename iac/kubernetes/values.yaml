@@ -16,9 +16,6 @@ app:
   mercadopago:
     oauthUrl: ${MERCADOPAGO_OAUTH_URL}
     ordersUrl: ${MERCADOPAGO_ORDERS_URL}
-    clientId: ${MERCADOPAGO_CLIENT_ID}
-    secretId: ${MERCADOPAGO_SECRET_ID}
-    posId: ${MERCADOPAGO_POS_ID}
 
 #Service
 service:
@@ -70,9 +67,7 @@ secrets:
   mercadopagoClientId: ${MERCADOPAGO_CLIENT_ID}
   mercadopagoSecretId: ${MERCADOPAGO_SECRET_ID}
   mercadopagoPosId: ${MERCADOPAGO_POS_ID}
-  postgresUrl: ${POSTGRES_URL}
-  postgresPassword: ${POSTGRES_PASSWORD}
-  postgresUser: ${POSTGRES_USER}
+
   mongoUri: ${MONGO_URI}
   mongoDatabase: ${MONGO_DATABASE}
   mongoUsername: ${MONGO_USERNAME}
