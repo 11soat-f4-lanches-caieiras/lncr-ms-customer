@@ -104,6 +104,12 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
       - name: Análise SonarQube
         env:
@@ -283,9 +289,7 @@ jobs:
 #            --set secrets.mercadopagoClientId="${{ secrets.MERCADOPAGO_CLIENT_ID }}" \
 #            --set secrets.mercadopagoSecretId="${{ secrets.MERCADOPAGO_SECRET_ID }}" \
 #            --set secrets.mercadopagoPosId="${{ secrets.MERCADOPAGO_POS_ID }}" \
-#            --set secrets.postgresUrl="${{ secrets.POSTGRES_URL }}" \
-#            --set secrets.postgresPassword="${{ secrets.POSTGRES_PASSWORD }}" \
-#            --set secrets.postgresUser="${{ secrets.POSTGRES_USER }}" \
+
 #            --set secrets.mongoUri="${{ secrets.MONGO_URI }}" \
 #            --set secrets.mongoDatabase="${{ secrets.MONGO_DATABASE }}" \
 #            --set secrets.mongoUsername="${{ secrets.MONGO_USERNAME }}" \
