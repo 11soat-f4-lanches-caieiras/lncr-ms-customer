@@ -17,7 +17,7 @@ management:
     health:
       show-details: always
 server:
-  port: 8080
+  port: "${SERVER_PORT:8080}"
 lncr:
   internal-url: "${LNCR_INTERNAL_URL:http://localhost:8080}"
   external-url: "${LNCR_EXTERNAL_URL:http://localhost:8080}"
