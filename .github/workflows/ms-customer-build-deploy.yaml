@@ -34,9 +34,6 @@ env:
   MERCADOPAGO_OAUTH_URL: ${{ vars.MERCADOPAGO_OAUTH_URL }}
   MERCADOPAGO_ORDERS_URL: ${{ vars.MERCADOPAGO_ORDERS_URL }}
   INGRESS_HOST: ${{ vars.INGRESS_HOST }}
-  INGRESS_SCHEME: ${{ vars.INGRESS_SCHEME }}
-  INGRESS_SUBNETS: ${{ vars.INGRESS_SUBNETS }}
-  CERTIFICATE_ARN: ${{ vars.CERTIFICATE_ARN }}
   MAVEN_POM_PATH: "${{ vars.MS_DOMAIN }}/pom.xml"
   MAVEN_SETTINGS_PATH: "${{ vars.MS_DOMAIN }}/maven_settings.xml"
   MAVEN_TEMPLATE_URL: ${{ vars.MAVEN_TEMPLATE_URL }}
@@ -159,33 +156,30 @@ jobs:
            echo "Cobertura de código $COVERAGE_PERCENTAGE% atende ao limite de $COVERAGE_THRESHOLD%."
           fi
 #
-#      - name: Login no Docker Hub
-#        uses: docker/login-action@v3
-#        with:
-#          username: ${{ env.DOCKER_USERNAME }}
-#          password: ${{ env.DOCKER_PASSWORD }}
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
 #
       - name: Definir Caminhos e Variáveis de Ambiente
         id: set-vars
-        env:
-          DOMAIN: ${{ env.DOMAIN}}
         run: |
           echo "Compondo variáveis de ambiente..."
           COMMIT_HASH=$(git rev-parse --short HEAD)
-          IMAGE_NAME=lncr-$DOMAIN-$COMMIT_HASH
+          IMAGE_NAME=lncr-ms-customer-$COMMIT_HASH
 
           echo "Exportando variáveis de ambiente..."
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-         
 
           echo "Exportando variáveis de output..."
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_OUTPUT
 #
-#      - name: Login no Amazon ECR
-#        id: login-ecr
-#        uses: aws-actions/amazon-ecr-login@v2
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 #
       - name: Construir imagem Docker
         env:
@@ -193,120 +187,149 @@ jobs:
         run: |
           echo "Criando imagem da aplicação..."
           docker build -t ${{ env.IMAGE_NAME }} -f $DOCKERFILE_PATH .
-#
-#      - name: Marcar imagem para ECR
-#        run: |
-#          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-#          IMAGE_TAG=${{ env.COMMIT_HASH }}
-#
-#          echo "Marcando imagem para ECR..."
-#          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
-#          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
-#
-#          echo "ECR_REGISTRY=$ECR_REGISTRY" >> $GITHUB_ENV
-#
-#      - name: Enviar imagem para ECR
-#        run: |
-#          IMAGE_TAG=${{ env.COMMIT_HASH }}
-#          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
-#          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
-#
-#          echo "Imagem enviada para ECR: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG,latest"
-##  approve-after-build:
-##    name: Manual Approval (after build)
-##    runs-on: ubuntu-latest
-##    needs: build-and-upload
-##    if: ${{ !inputs.only-helm-deploy }}
-##    steps:
-##      - name: Manual Approval
-##        uses: trstringer/manual-approval@v1
-##        with:
-##          secret: ${{ github.TOKEN }}
-##          approvers: gustavo-log,titoparizotto
-##          minimum-approvals: 1
-##          issue-title: "Deploy Infrastructure to Production"
-##          issue-body: "Please approve the deployment of infrastructure changes."
-##
-##  approve-helm-only:
-##    name: Manual Approval (helm only)
-##    runs-on: ubuntu-latest
-##    if: ${{ inputs.only-helm-deploy }}
-##    steps:
-##      - name: Manual Approval
-##        uses: trstringer/manual-approval@v1
-##        with:
-##          secret: ${{ github.token }}
-##          approvers: gustavo-log,titoparizotto
-##          minimum-approvals: 1
-##          issue-title: "Deploy Infrastructure to Production"
-##          issue-body: "Please approve the deployment of infrastructure changes."
-#    environment:
-#      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
-#    steps:
-#      - name: Fazer checkout do código
-#        uses: actions/checkout@v4
-#
-#      - name: Instalar Helm
-#        run: |
-#          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-#
-#      - name: Configurar kubectl
-#        run: |
-#          aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
-#
-#      - name: Obter subredes do EKS
-#        run: |
-#          EKS_SUBNETS=$(aws eks describe-cluster --name ${{ vars.EKS_CLUSTER }} --query 'cluster.resourcesVpcConfig.subnetIds' --output text | sed 's/\t/--/g')
-#          echo "EKS_SUBNETS=$EKS_SUBNETS" >> $GITHUB_ENV
-#
-#      - name: Deploy com Helm
-#        run: |
-#          COMMIT_HASH="$(git rev-parse --short HEAD)"
-#          ECR_REGISTRY="080145351546.dkr.ecr.us-east-1.amazonaws.com"
-#
-#          printf -v SUBNET_ARG -- '--set-string service.nlb.subnets=%s' "${{ env.EKS_SUBNETS }}"
-#
-#          helm upgrade --install lncr-ms-customer . \
-#            --namespace $NAMESPACE \
-#            --set app.image.repository=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }} \
-#            --set app.image.tag=$IMAGE_TAG \
-#            --set app.baseUrl="${{ env.LNCR_BASE_URL }}" \
-#            --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
-#            --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
-#            --set app.mercadopago.oauthUrl="${{ env.MERCADOPAGO_OAUTH_URL }}" \
-#            --set app.mercadopago.ordersUrl="${{ env.MERCADOPAGO_ORDERS_URL }}" \
-#            --set ingress.host="${{ env.INGRESS_HOST }}" \
-#            --set ingress.scheme="${{ env.INGRESS_SCHEME }}" \
-#            --set ingress.subnets="${{ env.INGRESS_SUBNETS }}" \
-#            --set ingress.certificateArn="${{ env.CERTIFICATE_ARN }}" \
-#            --set secrets.oauthAdminClientId="${{ secrets.LNCR_OAUTH_ADMIN_CLIENT_ID }}" \
-#            --set secrets.oauthAdminClientSecret="${{ secrets.LNCR_OAUTH_ADMIN_CLIENT_SECRET }}" \
-#            --set secrets.oauthMonitorClientId="${{ secrets.LNCR_OAUTH_MONITOR_CLIENT_ID }}" \
-#            --set secrets.oauthMonitorClientSecret="${{ secrets.LNCR_OAUTH_MONITOR_CLIENT_SECRET }}" \
-#            --set secrets.oauthTotemClientId="${{ secrets.LNCR_OAUTH_TOTEM_CLIENT_ID }}" \
-#            --set secrets.oauthTotemClientSecret="${{ secrets.LNCR_OAUTH_TOTEM_CLIENT_SECRET }}" \
-#            --set secrets.oauthSecretKey="${{ secrets.LNCR_OAUTH_SECRET_KEY }}" \
-#            --set secrets.mercadopagoClientId="${{ secrets.MERCADOPAGO_CLIENT_ID }}" \
-#            --set secrets.mercadopagoSecretId="${{ secrets.MERCADOPAGO_SECRET_ID }}" \
-#            --set secrets.mercadopagoPosId="${{ secrets.MERCADOPAGO_POS_ID }}" \
 
-#            --set secrets.mongoUri="${{ secrets.MONGO_URI }}" \
-#            --set secrets.mongoDatabase="${{ secrets.MONGO_DATABASE }}" \
-#            --set secrets.mongoUsername="${{ secrets.MONGO_USERNAME }}" \
-#            --set secrets.mongoPassword="${{ secrets.MONGO_PASSWORD }}" \
-#            --set app.name=lncr-app \
-#            --namespace fiap --create-namespace \
-#            --force
+      - name: Marcar imagem para ECR
+        run: |
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG=${{ env.COMMIT_HASH }}
 
-#      - name: Verificar status do deployment
-#         env:
-#           NAMESPACE: ${{ github.ref_name == 'master' && 'lncr-prd' || 'lncr-dev' }}
-#         run: |
-#           echo "Verificando status do deployment..."
-#           kubectl get pods -n $NAMESPACE -l app=lncr-ms-customer
-#           kubectl get ingress -n $NAMESPACE
-#           kubectl get services -n $NAMESPACE() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
-#
+          echo "Marcando imagem para ECR..."
+          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+
+          echo "ECR_REGISTRY=$ECR_REGISTRY" >> $GITHUB_ENV
+
+      - name: Enviar imagem para ECR
+        run: |
+          IMAGE_TAG=${{ env.COMMIT_HASH }}
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+
+          echo "Imagem enviada para ECR: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG,latest"
+  approve-after-build:
+    name: Manual Approval (after build)
+    runs-on: ubuntu-latest
+    needs: build-and-upload
+    if: ${{ !inputs.only-helm-deploy }}
+    steps:
+      - name: Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: gustavo-log,titoparizotto
+          minimum-approvals: 1
+
+  helm-deploy:
+    name: Deploy com Helm
+    runs-on: ubuntu-latest
+    needs: [build-and-upload, approve-after-build]
+    if: ${{ always() && (needs.build-and-upload.result == 'success' || inputs.only-helm-deploy) }}
+    environment:
+      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Configurar kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_DEFAULT_REGION }} --name ${{ env.EKS_CLUSTER }}
+
+      - name: Deploy com Helm
+        env:
+          AWS_ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          LNCR_BASE_URL: ${{ env.LNCR_BASE_URL }}
+          LNCR_INTERNAL_URL: ${{ env.LNCR_INTERNAL_URL }}
+          LNCR_EXTERNAL_URL: ${{ env.LNCR_EXTERNAL_URL }}
+          MERCADOPAGO_OAUTH_URL: ${{ env.MERCADOPAGO_OAUTH_URL }}
+          MERCADOPAGO_ORDERS_URL: ${{ env.MERCADOPAGO_ORDERS_URL }}
+          INGRESS_HOST: ${{ env.INGRESS_HOST }}
+        run: |
+          cd iac/kubernetes
+          
+          # Substituir variáveis no values.yaml
+          envsubst < values.yaml > values-processed.yaml
+          
+          # Deploy usando Helm
+          helm upgrade --install lncr-ms-customer . \
+            --namespace production \
+            --create-namespace \
+            --values values-processed.yaml \
+            --wait \
+            --timeout 10mum-approvals: 1
+            issue-title: "Deploy Infrastructure to Production"
+            issue-body: "Please approve the deployment of infrastructure changes."
+
+  approve-helm-only:
+    name: Manual Approval (helm only)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.only-helm-deploy }}
+    steps:
+      - name: Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.token }}
+          approvers: gustavo-log,titoparizotto
+          minimum-approvals: 1
+          issue-title: "Deploy Infrastructure to Production"
+          issue-body: "Please approve the deployment of infrastructure changes."
+    environment:
+      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
+  helm-deploy-after-approve:
+    name: Deploy com Helm (after approve)
+    needs: [approve-helm-only]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+
+      - name: Instalar Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Configurar kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
+
+      - name: Obter subredes do EKS
+        run: |
+          EKS_SUBNETS=$(aws eks describe-cluster --name ${{ vars.EKS_CLUSTER }} --query 'cluster.resourcesVpcConfig.subnetIds' --output text | sed 's/\t/--/g')
+          echo "EKS_SUBNETS=$EKS_SUBNETS" >> $GITHUB_ENV
+
+      - name: Deploy com Helm
+        run: |
+          COMMIT_HASH="$(git rev-parse --short HEAD)"
+          ECR_REGISTRY="080145351546.dkr.ecr.us-east-1.amazonaws.com"
+
+          printf -v SUBNET_ARG -- '--set-string service.nlb.subnets=%s' "${{ env.EKS_SUBNETS }}"
+
+          helm upgrade --install lncr-ms-customer . \
+            --namespace $NAMESPACE \
+            --set app.image.repository=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }} \
+            --set app.image.tag=$IMAGE_TAG \
+            --set app.baseUrl="${{ env.LNCR_BASE_URL }}" \
+            --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
+            --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
+            --set app.mercadopago.oauthUrl="${{ env.MERCADOPAGO_OAUTH_URL }}" \
+            --set app.mercadopago.ordersUrl="${{ env.MERCADOPAGO_ORDERS_URL }}" \
+            --set app.name=lncr-app \
+            --namespace production --create-namespace \
+            --force
+
+    # - name: Verificar status do deployment
+    #     env:
+    #       NAMESPACE: ${{ github.ref_name == 'master' && 'lncr-prd' || 'lncr-dev' }}
+    #     run: |
+    #       echo "Verificando status do deployment..."
+    #       kubectl get pods -n $NAMESPACE -l app=lncr-ms-customer
+    #       kubectl get ingress -n $NAMESPACE
+    #       kubectl get services -n $NAMESPACE() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
+
 #      - name: Trigger lncr-iac-configuration deployment
 #        uses: peter-evans/repository-dispatch@v2
 #        if: github.event_name == 'repository_dispatch'
