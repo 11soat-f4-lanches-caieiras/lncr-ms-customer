@@ -1,4 +1,10 @@
 name: Construir e Upload da Aplicação lncr-ms-customer
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 on:
   repository_dispatch:
     types: [infra-base-completed]
@@ -224,7 +230,7 @@ jobs:
       - name: Manual Approval
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.TOKEN }}
+          secret: ${{ secrets.GITHUB_TOKEN }}
           approvers: gustavo-log,titoparizotto
           minimum-approvals: 1
 
@@ -239,11 +245,11 @@ jobs:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar AWS CLI
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+      # - name: Configurar AWS CLI
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Configurar kubectl
         run: |
@@ -282,7 +288,7 @@ jobs:
       - name: Manual Approval
         uses: trstringer/manual-approval@v1
         with:
-          secret: ${{ github.token }}
+          secret: ${{ secrets.GITHUB_TOKEN }}
           approvers: gustavo-log,titoparizotto
           minimum-approvals: 1
           issue-title: "Deploy Infrastructure to Production"
