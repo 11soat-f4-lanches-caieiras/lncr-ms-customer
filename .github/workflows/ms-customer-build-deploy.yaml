@@ -176,11 +176,20 @@ jobs:
           echo "Exportando variáveis de output..."
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_OUTPUT
-#
+
       - name: Login no Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-#
+
+      - name: Compilar aplicação Maven
+        env:
+          MAVEN_SETTINGS_PATH: ${{ env.MAVEN_SETTINGS_PATH }}
+          MAVEN_POM_PATH: ${{ env.MAVEN_POM_PATH }}
+        run: |
+          mvn -B clean package -DskipTests \
+          -s ${MAVEN_SETTINGS_PATH} \
+          -f ${MAVEN_POM_PATH}
+
       - name: Construir imagem Docker
         env:
             DOCKERFILE_PATH: ${{ env.DOCKERFILE_PATH }}
