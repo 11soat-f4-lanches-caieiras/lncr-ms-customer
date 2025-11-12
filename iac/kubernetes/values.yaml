@@ -2,7 +2,7 @@
 
 #Aplicação
 app:
-  name: lncr-ms-customer
+  name: customer
   replicas: 2
   image:
     repository: ${AWS_ECR_REPOSITORY}

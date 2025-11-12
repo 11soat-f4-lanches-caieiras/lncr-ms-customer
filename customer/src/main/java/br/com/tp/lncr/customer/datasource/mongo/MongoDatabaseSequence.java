@@ -10,7 +10,7 @@ public class MongoDatabaseSequence {
     private String id;
     private Integer seq;
 
-    private MongoDatabaseSequence() {
+    public MongoDatabaseSequence() {
     }
 
     public String getId() {
