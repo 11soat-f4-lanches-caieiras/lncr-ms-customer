@@ -9,7 +9,7 @@ app:
     tag: latest
     pullPolicy: IfNotPresent
   port: 8080
-  containerName: lncr-ms-customer
+  containerName: customer
   baseUrl: ${LNCR_BASE_URL}
   internalUrl: ${LNCR_INTERNAL_URL}
   externalUrl: ${LNCR_EXTERNAL_URL}
@@ -92,8 +92,8 @@ secretProviderClass:
     - MONGO_USERNAME
     - MONGO_PASSWORD
   secretObjects:
-    - secretName: lncr-ms-customer-secret
+    - secretName: customer-secret
       type: Opaque
   twoSecrets:
     enabled: false
-deploySecretName: lncr-ms-customer-secret
+deploySecretName: customer-secret
