@@ -1,4 +1,11 @@
-{{- if .Values.ingress.enabled -}}
+{{- if and .Values.ingress.enabled (gt (len .Values.ingress.hosts) 0) -}}
+{{- $validHost := false -}}
+{{- range .Values.ingress.hosts -}}
+  {{- if and .host (not (hasPrefix "${" .host)) (not (eq .host "")) -}}
+    {{- $validHost = true -}}
+  {{- end -}}
+{{- end -}}
+{{- if $validHost -}}
 {{- $fullName := printf "%s-service" .Values.app.name -}}
 {{- $svcPort := .Values.service.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
@@ -38,6 +45,7 @@ spec:
   {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}
+    {{- if and .host (not (hasPrefix "${" .host)) (not (eq .host "")) }}
     - host: {{ .host | quote }}
       http:
         paths:
@@ -58,4 +66,6 @@ spec:
               {{- end }}
           {{- end }}
     {{- end }}
+    {{- end }}
+{{- end }}
 {{- end }}
