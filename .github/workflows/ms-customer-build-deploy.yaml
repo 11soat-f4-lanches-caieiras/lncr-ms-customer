@@ -325,20 +325,27 @@ jobs:
         run: |
           COMMIT_HASH="$(git rev-parse --short HEAD)"
           ECR_REGISTRY="080145351546.dkr.ecr.us-east-1.amazonaws.com"
+          NAMESPACE="${{ github.ref_name == 'master' && 'lncr-prd' || 'lncr-dev' }}"
+          IMAGE_TAG="${COMMIT_HASH}"
 
           printf -v SUBNET_ARG -- '--set-string service.nlb.subnets=%s' "${{ env.EKS_SUBNETS }}"
 
+          cd iac/kubernetes
+
           helm upgrade --install lncr-ms-customer . \
-            --namespace $NAMESPACE \
-            --set app.image.repository=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }} \
-            --set app.image.tag=$IMAGE_TAG \
+            --namespace ${NAMESPACE} \
+            --create-namespace \
+            --set app.image.repository=${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }} \
+            --set app.image.tag=${IMAGE_TAG} \
             --set app.baseUrl="${{ env.LNCR_BASE_URL }}" \
             --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set app.mercadopago.oauthUrl="${{ env.MERCADOPAGO_OAUTH_URL }}" \
             --set app.mercadopago.ordersUrl="${{ env.MERCADOPAGO_ORDERS_URL }}" \
             --set app.name=lncr-app \
-            --namespace production --create-namespace \
+            ${SUBNET_ARG} \
+            --wait \
+            --timeout 10m \
             --force
 
     # - name: Verificar status do deployment
