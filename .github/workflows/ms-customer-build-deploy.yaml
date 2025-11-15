@@ -35,7 +35,6 @@ env:
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
   EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
   JACOCO_REPORT_PATH: "${{ vars.MS_DOMAIN }}/target/site/jacoco/jacoco.xml"
-  LNCR_BASE_URL: ${{ vars.LNCR_BASE_URL }}
   LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
   LNCR_INTERNAL_URL: ${{ vars.LNCR_INTERNAL_URL }}
   MERCADOPAGO_OAUTH_URL: ${{ vars.MERCADOPAGO_OAUTH_URL }}
@@ -317,6 +316,9 @@ jobs:
           aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
 
       - name: Deploy com Helm
+        env:
+          LNCR_INTERNAL_URL: ${{ env.LNCR_INTERNAL_URL }}
+          LNCR_EXTERNAL_URL: ${{ env.LNCR_EXTERNAL_URL }}
         run: |
           COMMIT_HASH="$(git rev-parse --short HEAD)"
           ECR_REGISTRY="080145351546.dkr.ecr.us-east-1.amazonaws.com"
@@ -336,15 +338,10 @@ jobs:
             --create-namespace \
             --set app.image.repository=${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }} \
             --set app.image.tag=${IMAGE_TAG} \
-            --set app.baseUrl="${{ env.LNCR_BASE_URL }}" \
             --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
-            --set app.mercadopago.oauthUrl="${{ env.MERCADOPAGO_OAUTH_URL }}" \
-            --set app.mercadopago.ordersUrl="${{ env.MERCADOPAGO_ORDERS_URL }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
-            --wait \
-            --timeout 10m \
             --force
 
     # - name: Verificar status do deployment

@@ -14,12 +14,8 @@ app:
     pullPolicy: IfNotPresent
   port: 8080
   containerName: customer
-  baseUrl: ${LNCR_BASE_URL}
   internalUrl: ${LNCR_INTERNAL_URL}
   externalUrl: ${LNCR_EXTERNAL_URL}
-  mercadopago:
-    oauthUrl: ${MERCADOPAGO_OAUTH_URL}
-    ordersUrl: ${MERCADOPAGO_ORDERS_URL}
 
 #Service
 service:
@@ -45,12 +41,11 @@ ingress:
   tls: []
 
 
-#Storage
-storage:
-  fsx:
-    server: "10.1.46.136" 
-    path: "/fsx"  
-
+##Storage
+#storage:
+#  fsx:
+#    server: "10.1.46.136"
+#    path: "/fsx"
 
 #Deployment
 resources:
@@ -73,7 +68,7 @@ hpa:
 #SecretProviderClass
 secretProviderClass:
   name: "lncr-ms-customer-prd-secrets"
-  namespace: production
+  namespace: ns-lncr-prd
   provider: aws
   parameters:
     region: "us-east-1"
@@ -81,20 +76,7 @@ secretProviderClass:
       - objectName: arn:aws:secretsmanager:us-east-1:080145351546:secret:lncr-ms-customer-prd-secret-6ZXgHo
         objectType: secretsmanager
   keys:
-    - LNCR_OAUTH_ADMIN_CLIENT_ID
-    - LNCR_OAUTH_ADMIN_CLIENT_SECRET
-    - LNCR_OAUTH_MONITOR_CLIENT_ID
-    - LNCR_OAUTH_MONITOR_CLIENT_SECRET
-    - LNCR_OAUTH_TOTEM_CLIENT_ID
-    - LNCR_OAUTH_TOTEM_CLIENT_SECRET
-    - LNCR_OAUTH_SECRET_KEY
-    - MERCADOPAGO_CLIENT_ID
-    - MERCADOPAGO_SECRET_ID
-    - MERCADOPAGO_POS_ID
     - MONGO_URI
-    - MONGO_DATABASE
-    - MONGO_USERNAME
-    - MONGO_PASSWORD
   secretObjects:
     - secretName: customer-secret
       type: Opaque
