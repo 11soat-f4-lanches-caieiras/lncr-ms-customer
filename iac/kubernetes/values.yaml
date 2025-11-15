@@ -1,5 +1,9 @@
 #valores padrões para o Helm Chart
 
+#ServiceAccount
+serviceAccount:
+  name: secrets-sa
+
 #Aplicação
 app:
   name: customer
