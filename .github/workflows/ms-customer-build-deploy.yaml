@@ -316,19 +316,12 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
 
-      - name: Obter subredes do EKS
-        run: |
-          EKS_SUBNETS=$(aws eks describe-cluster --name ${{ vars.EKS_CLUSTER }} --query 'cluster.resourcesVpcConfig.subnetIds' --output text | sed 's/\t/--/g')
-          echo "EKS_SUBNETS=$EKS_SUBNETS" >> $GITHUB_ENV
-
       - name: Deploy com Helm
         run: |
           COMMIT_HASH="$(git rev-parse --short HEAD)"
           ECR_REGISTRY="080145351546.dkr.ecr.us-east-1.amazonaws.com"
           NAMESPACE="${{ github.ref_name == 'master' && 'lncr-prd' || 'lncr-dev' }}"
           IMAGE_TAG="${COMMIT_HASH}"
-
-          printf -v SUBNET_ARG -- '--set-string service.nlb.subnets=%s' "${{ env.EKS_SUBNETS }}"
 
           cd iac/kubernetes
 
@@ -342,8 +335,6 @@ jobs:
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set app.mercadopago.oauthUrl="${{ env.MERCADOPAGO_OAUTH_URL }}" \
             --set app.mercadopago.ordersUrl="${{ env.MERCADOPAGO_ORDERS_URL }}" \
-            --set app.name=lncr-app \
-            ${SUBNET_ARG} \
             --wait \
             --timeout 10m \
             --force
