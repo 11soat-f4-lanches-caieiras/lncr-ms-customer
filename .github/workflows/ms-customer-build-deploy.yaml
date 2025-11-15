@@ -235,51 +235,51 @@ jobs:
           approvers: gustavo-log,titoparizotto
           minimum-approvals: 1
 
-  helm-deploy:
-    name: Deploy com Helm
-    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
-    needs: [build-and-upload, approve-after-build]
-    if: ${{ always() && (needs.build-and-upload.result == 'success' || inputs.only-helm-deploy) }}
-    environment:
-      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
-    steps:
-      - name: Fazer checkout do código
-        uses: actions/checkout@v4
-
-      # - name: Configurar AWS CLI
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-      #     aws-region: ${{ env.AWS_DEFAULT_REGION }}
-
-      - name: Configurar kubectl
-        run: |
-          aws eks update-kubeconfig --region ${{ env.AWS_DEFAULT_REGION }} --name ${{ env.EKS_CLUSTER }}
-
-      - name: Deploy com Helm
-        env:
-          AWS_ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
-          LNCR_BASE_URL: ${{ env.LNCR_BASE_URL }}
-          LNCR_INTERNAL_URL: ${{ env.LNCR_INTERNAL_URL }}
-          LNCR_EXTERNAL_URL: ${{ env.LNCR_EXTERNAL_URL }}
-          MERCADOPAGO_OAUTH_URL: ${{ env.MERCADOPAGO_OAUTH_URL }}
-          MERCADOPAGO_ORDERS_URL: ${{ env.MERCADOPAGO_ORDERS_URL }}
-          INGRESS_HOST: ${{ env.INGRESS_HOST }}
-        run: |
-          cd iac/kubernetes
-          
-          # Substituir variáveis no values.yaml
-          envsubst < values.yaml > values-processed.yaml
-          
-          # Deploy usando Helm
-          helm upgrade --install lncr-ms-customer . \
-            --namespace production \
-            --create-namespace \
-            --values values-processed.yaml \
-            --wait \
-            --timeout 10mum-approvals: 1
-            issue-title: "Deploy Infrastructure to Production"
-            issue-body: "Please approve the deployment of infrastructure changes."
+#  helm-deploy:
+#    name: Deploy com Helm
+#    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
+#    needs: [build-and-upload, approve-after-build]
+#    if: ${{ always() && (needs.build-and-upload.result == 'success' || inputs.only-helm-deploy) }}
+#    environment:
+#      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
+#    steps:
+#      - name: Fazer checkout do código
+#        uses: actions/checkout@v4
+#
+#      # - name: Configurar AWS CLI
+#      #   uses: aws-actions/configure-aws-credentials@v4
+#      #   with:
+#      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+#      #     aws-region: ${{ env.AWS_DEFAULT_REGION }}
+#
+#      - name: Configurar kubectl
+#        run: |
+#          aws eks update-kubeconfig --region ${{ env.AWS_DEFAULT_REGION }} --name ${{ env.EKS_CLUSTER }}
+#
+#      - name: Deploy com Helm
+#        env:
+#          AWS_ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+#          LNCR_BASE_URL: ${{ env.LNCR_BASE_URL }}
+#          LNCR_INTERNAL_URL: ${{ env.LNCR_INTERNAL_URL }}
+#          LNCR_EXTERNAL_URL: ${{ env.LNCR_EXTERNAL_URL }}
+#          MERCADOPAGO_OAUTH_URL: ${{ env.MERCADOPAGO_OAUTH_URL }}
+#          MERCADOPAGO_ORDERS_URL: ${{ env.MERCADOPAGO_ORDERS_URL }}
+#          INGRESS_HOST: ${{ env.INGRESS_HOST }}
+#        run: |
+#          cd iac/kubernetes
+#
+#          # Substituir variáveis no values.yaml
+#          envsubst < values.yaml > values-processed.yaml
+#
+#          # Deploy usando Helm
+#          helm upgrade --install lncr-ms-customer . \
+#            --namespace production \
+#            --create-namespace \
+#            --values values-processed.yaml \
+#            --wait \
+#            --timeout 10mum-approvals: 1
+#            issue-title: "Deploy Infrastructure to Production"
+#            issue-body: "Please approve the deployment of infrastructure changes."
 
   approve-helm-only:
     name: Manual Approval (helm only)
@@ -296,10 +296,14 @@ jobs:
           issue-body: "Please approve the deployment of infrastructure changes."
     environment:
       name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
+
   helm-deploy-after-approve:
-    name: Deploy com Helm (after approve)
-    needs: [approve-helm-only]
+    name: Deploy com Helm
+    needs: [approve-helm-only, approve-after-build]
+    if: ${{ always() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
     runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
+    environment:
+      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
     steps:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
