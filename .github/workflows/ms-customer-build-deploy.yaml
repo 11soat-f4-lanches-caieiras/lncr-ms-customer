@@ -237,7 +237,7 @@ jobs:
 
   helm-deploy:
     name: Deploy com Helm
-    runs-on: ubuntu-latest
+    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
     needs: [build-and-upload, approve-after-build]
     if: ${{ always() && (needs.build-and-upload.result == 'success' || inputs.only-helm-deploy) }}
     environment:
@@ -299,7 +299,7 @@ jobs:
   helm-deploy-after-approve:
     name: Deploy com Helm (after approve)
     needs: [approve-helm-only]
-    runs-on: ubuntu-latest
+    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
