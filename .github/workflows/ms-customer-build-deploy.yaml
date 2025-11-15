@@ -246,11 +246,11 @@ jobs:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar AWS CLI
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+      # - name: Configurar AWS CLI
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Configurar kubectl
         run: |
