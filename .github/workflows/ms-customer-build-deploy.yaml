@@ -332,7 +332,7 @@ jobs:
           fi
 
           helm upgrade --install lncr-ms-customer . \
-            --namespace ${NAMESPACE} \
+            --namespace production \
             --create-namespace \
             --set app.image.repository=${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }} \
             --set app.image.tag=${IMAGE_TAG} \

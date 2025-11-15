@@ -3,7 +3,7 @@
 #Aplicação
 app:
   name: customer
-  replicas: 2
+  replicas: 1
   image:
     repository: ${AWS_ECR_REPOSITORY}
     tag: latest
