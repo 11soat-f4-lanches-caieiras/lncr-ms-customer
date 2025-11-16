@@ -304,7 +304,7 @@ jobs:
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/load-balancer-name=${{ env.ALB_NAME }} \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/group\.name=${{ env.ALB_NAME }} \
-            --set ingress.annotations.alb\.ingress\.kubernetes\.io/subnets=${{ env.ALB_SUBNETS }} \
+            --set-string ingress.annotations.alb\.ingress\.kubernetes\.io/subnets="${{ env.ALB_SUBNETS }}" \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/security-groups=${{ env.ALB_SECURITY_GROUP }} \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
