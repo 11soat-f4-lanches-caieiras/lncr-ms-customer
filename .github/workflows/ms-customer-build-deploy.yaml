@@ -275,6 +275,7 @@ jobs:
         run: |
           COMMIT_HASH="$(git rev-parse --short HEAD)"
           IMAGE_TAG="${COMMIT_HASH}"
+          AWS_SECRET_MANAGER_ARN=$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)
 
           cd iac/kubernetes
 
@@ -293,5 +294,6 @@ jobs:
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
+            --set secretProviderClass.parameters.objects.objectName=${AWS_SECRET_MANAGER_ARN} \
             --force
 
