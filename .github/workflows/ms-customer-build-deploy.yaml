@@ -295,6 +295,9 @@ jobs:
             INGRESS_ENABLED="false"
           fi
 
+          # Escapar vírgulas de subnets para Helm não dividir em múltiplas chaves
+          ESCAPED_SUBNETS=$(printf "%s" "${{ env.ALB_SUBNETS }}" | sed 's/,/\\,/g')
+
           helm upgrade --install ${{ env.MS_NAME }} . \
             --namespace production \
             --create-namespace \
@@ -304,8 +307,8 @@ jobs:
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/load-balancer-name=${{ env.ALB_NAME }} \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/group\.name=${{ env.ALB_NAME }} \
-            --set-string ingress.annotations.alb\.ingress\.kubernetes\.io/subnets="${{ env.ALB_SUBNETS }}" \
-            --set ingress.annotations.alb\.ingress\.kubernetes\.io/security-groups=${{ env.ALB_SECURITY_GROUP }} \
+            --set-string ingress.annotations.alb\.ingress\.kubernetes\.io/subnets=${ESCAPED_SUBNETS} \
+            --set-string ingress.annotations.alb\.ingress\.kubernetes\.io/security-groups="${{ env.ALB_SECURITY_GROUP }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
             --set secretProviderClass.parameters.objects.objectName=${AWS_SECRET_MANAGER_ARN} \
