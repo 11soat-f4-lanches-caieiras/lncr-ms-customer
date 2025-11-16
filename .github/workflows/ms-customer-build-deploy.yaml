@@ -28,8 +28,9 @@ on:
 
 env:
   #variáveis
-  AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
   AWS_CODE_BUILD: ${{ vars.AWS_CODE_BUILD }}
+  AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+  AWS_ECR_REGISTRY: ${{ vars.AWS_ECR_REGISTRY }}
   BASE_IMAGE: ${{ vars.BASE_IMAGE }}
   DOCKERFILE_PATH: "${{ vars.MS_DOMAIN }}/Dockerfile"
   DOCKERFILE_TEMPLATE_URL: ${{ vars.DOCKERFILE_TEMPLATE_URL }}
@@ -43,6 +44,7 @@ env:
   MAVEN_SETTINGS_PATH: "${{ vars.MS_DOMAIN }}/maven_settings.xml"
   MAVEN_TEMPLATE_URL: ${{ vars.MAVEN_TEMPLATE_URL }}
   MS_DOMAIN: ${{ vars.MS_DOMAIN }}
+  MS_NAME: ${{ vars.MS_NAME }}
 
 
 
@@ -234,52 +236,6 @@ jobs:
           approvers: gustavo-log,titoparizotto
           minimum-approvals: 1
 
-#  helm-deploy:
-#    name: Deploy com Helm
-#    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
-#    needs: [build-and-upload, approve-after-build]
-#    if: ${{ always() && (needs.build-and-upload.result == 'success' || inputs.only-helm-deploy) }}
-#    environment:
-#      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
-#    steps:
-#      - name: Fazer checkout do código
-#        uses: actions/checkout@v4
-#
-#      # - name: Configurar AWS CLI
-#      #   uses: aws-actions/configure-aws-credentials@v4
-#      #   with:
-#      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-#      #     aws-region: ${{ env.AWS_DEFAULT_REGION }}
-#
-#      - name: Configurar kubectl
-#        run: |
-#          aws eks update-kubeconfig --region ${{ env.AWS_DEFAULT_REGION }} --name ${{ env.EKS_CLUSTER }}
-#
-#      - name: Deploy com Helm
-#        env:
-#          AWS_ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
-#          LNCR_BASE_URL: ${{ env.LNCR_BASE_URL }}
-#          LNCR_INTERNAL_URL: ${{ env.LNCR_INTERNAL_URL }}
-#          LNCR_EXTERNAL_URL: ${{ env.LNCR_EXTERNAL_URL }}
-#          MERCADOPAGO_OAUTH_URL: ${{ env.MERCADOPAGO_OAUTH_URL }}
-#          MERCADOPAGO_ORDERS_URL: ${{ env.MERCADOPAGO_ORDERS_URL }}
-#          INGRESS_HOST: ${{ env.INGRESS_HOST }}
-#        run: |
-#          cd iac/kubernetes
-#
-#          # Substituir variáveis no values.yaml
-#          envsubst < values.yaml > values-processed.yaml
-#
-#          # Deploy usando Helm
-#          helm upgrade --install lncr-ms-customer . \
-#            --namespace production \
-#            --create-namespace \
-#            --values values-processed.yaml \
-#            --wait \
-#            --timeout 10mum-approvals: 1
-#            issue-title: "Deploy Infrastructure to Production"
-#            issue-body: "Please approve the deployment of infrastructure changes."
-
   approve-helm-only:
     name: Manual Approval (helm only)
     runs-on: ubuntu-latest
@@ -316,13 +272,8 @@ jobs:
           aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
 
       - name: Deploy com Helm
-        env:
-          LNCR_INTERNAL_URL: ${{ env.LNCR_INTERNAL_URL }}
-          LNCR_EXTERNAL_URL: ${{ env.LNCR_EXTERNAL_URL }}
         run: |
           COMMIT_HASH="$(git rev-parse --short HEAD)"
-          ECR_REGISTRY="080145351546.dkr.ecr.us-east-1.amazonaws.com"
-          NAMESPACE="${{ github.ref_name == 'master' && 'lncr-prd' || 'lncr-dev' }}"
           IMAGE_TAG="${COMMIT_HASH}"
 
           cd iac/kubernetes
@@ -333,10 +284,10 @@ jobs:
             INGRESS_ENABLED="false"
           fi
 
-          helm upgrade --install lncr-ms-customer . \
+          helm upgrade --install ${{ env.MS_NAME }} . \
             --namespace production \
             --create-namespace \
-            --set app.image.repository=${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }} \
+            --set app.image.repository=${{ env.AWS_ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }} \
             --set app.image.tag=${IMAGE_TAG} \
             --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
@@ -344,24 +295,3 @@ jobs:
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
             --force
 
-    # - name: Verificar status do deployment
-    #     env:
-    #       NAMESPACE: ${{ github.ref_name == 'master' && 'lncr-prd' || 'lncr-dev' }}
-    #     run: |
-    #       echo "Verificando status do deployment..."
-    #       kubectl get pods -n $NAMESPACE -l app=lncr-ms-customer
-    #       kubectl get ingress -n $NAMESPACE
-    #       kubectl get services -n $NAMESPACE() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
-
-#      - name: Trigger lncr-iac-configuration deployment
-#        uses: peter-evans/repository-dispatch@v2
-#        if: github.event_name == 'repository_dispatch'
-#        with:
-#          token: ${{ secrets.REPO_TOKEN}}
-#          repository: 11soat-f3-lanches-caieiras/lncr-iac
-#          event-type: infra-iac-completed
-#          client-payload: |
-#            {
-#              "branch": "${{ github.ref_name }}",
-#              "commit": "${{ github.sha }}"
-#            }
