@@ -68,7 +68,7 @@ env:
 jobs:
   build-and-upload:
     name: Validação Construção e Upload da Imagem Docker
-    runs-on: ${{ env.AWS_CODE_BUILD }}--${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ${{ vars.AWS_CODE_BUILD }}--${{ github.run_id }}-${{ github.run_attempt }}
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch') && !inputs.only-helm-deploy }}
     environment:
       name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
@@ -261,7 +261,7 @@ jobs:
     name: Deploy com Helm
     needs: [approve-helm-only, approve-after-build]
     if: ${{ always() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
-    runs-on: ${{ env.AWS_CODE_BUILD }}--${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ${{ vars.AWS_CODE_BUILD }}--${{ github.run_id }}-${{ github.run_attempt }}
     environment:
       name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
     steps:
