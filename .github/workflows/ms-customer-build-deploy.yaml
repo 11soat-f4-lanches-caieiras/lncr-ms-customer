@@ -28,7 +28,6 @@ on:
 
 env:
   #variáveis pipeline
-  AWS_CODE_BUILD: ${{ vars.AWS_CODE_BUILD }}
   AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
   AWS_ECR_REGISTRY: ${{ vars.AWS_ECR_REGISTRY }}
   BASE_IMAGE: ${{ vars.BASE_IMAGE }}
