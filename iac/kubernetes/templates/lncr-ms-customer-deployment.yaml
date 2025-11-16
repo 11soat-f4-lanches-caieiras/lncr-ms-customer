@@ -50,11 +50,11 @@ spec:
               readOnly: true
           resources:
             requests:
-              memory: {{ .Values.resources.lanchesCaieirasApp.requests.memory }}
-              cpu: {{ .Values.resources.lanchesCaieirasApp.requests.cpu }}
+              memory: {{ .Values.resources.pods.requests.memory }}
+              cpu: {{ .Values.resources.pods.requests.cpu }}
             limits:
-              memory: {{ .Values.resources.lanchesCaieirasApp.limits.memory }}
-              cpu: {{ .Values.resources.lanchesCaieirasApp.limits.cpu }}
+              memory: {{ .Values.resources.pods.limits.memory }}
+              cpu: {{ .Values.resources.pods.limits.cpu }}
           readinessProbe:
             tcpSocket:
               port: 8080
