@@ -29,8 +29,8 @@ ingress:
   annotations:
     alb.ingress.kubernetes.io/scheme: internal
     alb.ingress.kubernetes.io/backend-protocol: HTTP
-    alb.ingress.kubernetes.io/load-balancer-name: bingo-ext-prd-alb
-    alb.ingress.kubernetes.io/group.name: bingo-ext-prd-alb
+    alb.ingress.kubernetes.io/load-balancer-name: lncr-ext-prd-alb
+    alb.ingress.kubernetes.io/group.name: lncr-ext-prd-alb
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/subnets: "subnet-0f7bb2de69bfbb323,subnet-0c4710d04b3ff3bbc"
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
