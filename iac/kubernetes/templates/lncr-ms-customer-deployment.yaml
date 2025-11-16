@@ -27,11 +27,6 @@ spec:
             - containerPort: {{ .Values.app.port }}
           env:
             #configMap
-            - name: LNCR_BASE_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.app.name }}-config
-                  key: LNCR_BASE_URL
             - name: LNCR_INTERNAL_URL
               valueFrom:
                 configMapKeyRef:
@@ -42,16 +37,6 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.app.name }}-config
                   key: LNCR_EXTERNAL_URL
-            - name: MERCADOPAGO_OAUTH_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.app.name }}-config
-                  key: MERCADOPAGO_OAUTH_URL
-            - name: MERCADOPAGO_ORDERS_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ .Values.app.name }}-config
-                  key: MERCADOPAGO_ORDERS_URL
             #secrets from SecretProviderClass
             {{- range .Values.secretProviderClass.keys }}
             - name: {{ . }}

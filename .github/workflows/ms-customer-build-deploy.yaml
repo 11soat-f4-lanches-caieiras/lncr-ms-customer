@@ -29,6 +29,7 @@ on:
 env:
   #variáveis
   AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+  AWS_CODE_BUILD: ${{ vars.AWS_CODE_BUILD }}
   BASE_IMAGE: ${{ vars.BASE_IMAGE }}
   DOCKERFILE_PATH: "${{ vars.MS_DOMAIN }}/Dockerfile"
   DOCKERFILE_TEMPLATE_URL: ${{ vars.DOCKERFILE_TEMPLATE_URL }}
@@ -37,13 +38,12 @@ env:
   JACOCO_REPORT_PATH: "${{ vars.MS_DOMAIN }}/target/site/jacoco/jacoco.xml"
   LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
   LNCR_INTERNAL_URL: ${{ vars.LNCR_INTERNAL_URL }}
-  MERCADOPAGO_OAUTH_URL: ${{ vars.MERCADOPAGO_OAUTH_URL }}
-  MERCADOPAGO_ORDERS_URL: ${{ vars.MERCADOPAGO_ORDERS_URL }}
   INGRESS_HOST: ${{ vars.INGRESS_HOST }}
   MAVEN_POM_PATH: "${{ vars.MS_DOMAIN }}/pom.xml"
   MAVEN_SETTINGS_PATH: "${{ vars.MS_DOMAIN }}/maven_settings.xml"
   MAVEN_TEMPLATE_URL: ${{ vars.MAVEN_TEMPLATE_URL }}
   MS_DOMAIN: ${{ vars.MS_DOMAIN }}
+
 
 
   # secrets
@@ -59,7 +59,7 @@ env:
 jobs:
   build-and-upload:
     name: Validação Construção e Upload da Imagem Docker
-    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ${{ env.AWS_CODE_BUILD }}--${{ github.run_id }}-${{ github.run_attempt }}
     #runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
     #Disparado via repository_dispatch do repositório lncr-iac
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch') && !inputs.only-helm-deploy }}
@@ -300,7 +300,7 @@ jobs:
     name: Deploy com Helm
     needs: [approve-helm-only, approve-after-build]
     if: ${{ always() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
-    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ${{ env.AWS_CODE_BUILD }}--${{ github.run_id }}-${{ github.run_attempt }}
     environment:
       name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
     steps:
