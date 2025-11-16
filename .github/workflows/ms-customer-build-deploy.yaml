@@ -268,6 +268,10 @@ jobs:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
 
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Instalar Helm
         run: |
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
@@ -278,6 +282,7 @@ jobs:
 
       - name: Deploy com Helm
         run: |
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
           COMMIT_HASH="$(git rev-parse --short HEAD)"
           IMAGE_TAG="${COMMIT_HASH}"
           AWS_SECRET_MANAGER_ARN=$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)
@@ -293,12 +298,12 @@ jobs:
           helm upgrade --install ${{ env.MS_NAME }} . \
             --namespace production \
             --create-namespace \
-            --set app.image.repository=${{ env.AWS_ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }} \
+            --set app.image.repository=${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }} \
             --set app.image.tag=${IMAGE_TAG} \
             --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/load-balancer-name=${{ env.ALB_NAME }} \
-            --set ingress.annotations.alb\.ingress\.kubernetes\.io/group\.name=${ env.ALB_NAME } \
+            --set ingress.annotations.alb\.ingress\.kubernetes\.io/group\.name=${{ env.ALB_NAME }} \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/subnets=${{ env.ALB_SUBNETS }} \
             --set ingress.annotations.alb\.ingress\.kubernetes\.io/security-groups=${{ env.ALB_SECURITY_GROUP }} \
             --set ingress.enabled=${INGRESS_ENABLED} \
