@@ -41,12 +41,6 @@ ingress:
   tls: []
 
 
-##Storage
-#storage:
-#  fsx:
-#    server: "10.1.46.136"
-#    path: "/fsx"
-
 #Deployment
 resources:
   lanchesCaieirasApp:
@@ -68,7 +62,7 @@ hpa:
 #SecretProviderClass
 secretProviderClass:
   name: "lncr-ms-customer-prd-secrets"
-  namespace: ns-lncr-prd
+  namespace: production
   provider: aws
   parameters:
     region: "us-east-1"

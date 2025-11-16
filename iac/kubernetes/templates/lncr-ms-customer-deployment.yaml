@@ -20,7 +20,7 @@ spec:
           operator: "Exists"
           effect: "NoSchedule"
       containers:
-        - name: {{ .Values.app.containerName}}
+        - name: {{ .Values.app.containerName }}
           image: "{{ .Values.app.image.repository }}{{- if .Values.app.image.tag }}:{{ .Values.app.image.tag }}{{- end }}"
           imagePullPolicy: {{ .Values.app.image.pullPolicy }}
           ports:
@@ -60,9 +60,6 @@ spec:
                   name: {{ index $.Values.secretProviderClass.secretObjects 0 "secretName" }}
                   key: {{ . }}
             {{- end }}
-          volumeMounts:
-            - name: images-storage
-              mountPath: /app/images
             - name: secrets-store
               mountPath: /mnt/secrets-store
               readOnly: true
@@ -88,10 +85,6 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
       volumes:
-        - name: images-storage
-          nfs:
-            server: {{ .Values.storage.fsx.server }}
-            path: {{ .Values.storage.fsx.path }}
         - name: secrets-store
           csi:
             driver: secrets-store.csi.k8s.io
