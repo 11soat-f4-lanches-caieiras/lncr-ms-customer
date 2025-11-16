@@ -95,6 +95,7 @@ jobs:
               BIN=$PWD
               echo "Obtendo template do maven_settings.xml"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
+              cat $BIN/$MAVEN_SETTINGS_PATH
           
               echo "Obtendo template do Docker File"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
@@ -260,7 +261,7 @@ jobs:
     name: Deploy com Helm
     needs: [approve-helm-only, approve-after-build]
     if: ${{ always() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
-    runs-on: ${{ vars.AWS_CODE_BUILD }}--${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ${{ vars.AWS_CODE_BUILD }}-${{ github.run_id }}-${{ github.run_attempt }}
     environment:
       name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
     steps:
