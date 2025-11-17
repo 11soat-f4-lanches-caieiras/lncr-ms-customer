@@ -280,6 +280,15 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
 
+      - name: Validar Chart (lint + template)
+        run: |
+          cd iac/kubernetes
+          helm lint .
+          helm template dryrun . \
+            --set ingress.enabled=true \
+            --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" | awk '/kind: Ingress/{flag=1} flag{print} /kind: SecretProviderClass/{flag=0}'
+          echo "Renderizacao ingress OK se annotations listadas como chave: \"valor\""
+
       - name: Deploy com Helm
         run: |
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
@@ -296,13 +305,11 @@ jobs:
           
           cd iac/kubernetes
 
-          # Desabilitar ingress se INGRESS_HOST estiver vazio
           INGRESS_ENABLED="true"
           if [ -z "${{ env.INGRESS_HOST }}" ]; then
             INGRESS_ENABLED="false"
           fi
 
-          # Escapar vírgulas de subnets para Helm não dividir em múltiplas chaves
           ESCAPED_SUBNETS=$(printf "%s" "${{ env.ALB_SUBNETS }}" | sed 's/,/\\,/g')
 
           helm upgrade --install ${{ env.MS_NAME }} . \
@@ -312,13 +319,12 @@ jobs:
             --set app.image.tag=${IMAGE_TAG} \
             --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
-            --set ingress.annotations.alb\.ingress\.kubernetes\.io/load-balancer-name=${{ env.ALB_NAME }} \
-            --set ingress.annotations.alb\.ingress\.kubernetes\.io/group\.name=${{ env.ALB_NAME }} \
-            --set-string ingress.annotations.alb\.ingress\.kubernetes\.io/subnets=${ESCAPED_SUBNETS} \
-            --set-string ingress.annotations.alb\.ingress\.kubernetes\.io/security-groups="${{ env.ALB_SECURITY_GROUP }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
+            --set-string ingress.annotations."alb.ingress.kubernetes.io/load-balancer-name"="${{ env.ALB_NAME }}" \
+            --set-string ingress.annotations."alb.ingress.kubernetes.io/group.name"="${{ env.ALB_NAME }}" \
+            --set-string ingress.annotations."alb.ingress.kubernetes.io/subnets"="${ESCAPED_SUBNETS}" \
+            --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${{ env.ALB_SECURITY_GROUP }}" \
             --set secretProviderClass.parameters.objects[0].objectName=${AWS_SECRET_MANAGER_ARN} \
             --set secretProviderClass.parameters.objects[0].objectType=secretsmanager \
             --force
-

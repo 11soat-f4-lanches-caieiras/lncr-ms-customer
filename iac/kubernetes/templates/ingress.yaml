@@ -8,9 +8,11 @@ metadata:
   name: {{ .Values.app.name }}-ingress
   labels:
     app: {{ .Values.app.name }}
-  {{- with .Values.ingress.annotations }}
+  {{- if .Values.ingress.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- range $k, $v := .Values.ingress.annotations }}
+    {{$k}}: {{ $v | quote }}
+    {{- end }}
   {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className | default "alb" }}
