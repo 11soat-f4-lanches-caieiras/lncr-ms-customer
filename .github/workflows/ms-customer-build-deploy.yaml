@@ -292,7 +292,8 @@ jobs:
           fi
           
           AWS_SECRET_MANAGER_ARN="$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)"
-
+          echo $AWS_SECRET_MANAGER_ARN
+          
           cd iac/kubernetes
 
           # Desabilitar ingress se INGRESS_HOST estiver vazio
@@ -317,7 +318,7 @@ jobs:
             --set-string ingress.annotations.alb\.ingress\.kubernetes\.io/security-groups="${{ env.ALB_SECURITY_GROUP }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
-            --set secretProviderClass.parameters.objects[0].objectName=${AWS_SECRET_MANAGER_ARN} \
-            --set secretProviderClass.parameters.objects[0].objectType=secretsmanager \
+#            --set secretProviderClass.parameters.objects[0].objectName=${AWS_SECRET_MANAGER_ARN} \
+#            --set secretProviderClass.parameters.objects[0].objectType=secretsmanager \
             --force
 

@@ -70,7 +70,7 @@ secretProviderClass:
   parameters:
     region: "us-east-1"
     objects:
-      - objectName: ${AWS_SECRET_MANAGER_ARN}
+      - objectName: "arn:aws:secretsmanager:us-east-1:080145351546:secret:lncr-ms-customer-prd-secret-6ZXgHo"
         objectType: secretsmanager
   keys:
     - MONGO_URI
