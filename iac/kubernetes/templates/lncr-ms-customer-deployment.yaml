@@ -45,6 +45,7 @@ spec:
                   name: {{ index $.Values.secretProviderClass.secretObjects 0 "secretName" }}
                   key: {{ . }}
             {{- end }}
+          volumeMounts:
             - name: secrets-store
               mountPath: /mnt/secrets-store
               readOnly: true
