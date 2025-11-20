@@ -61,9 +61,6 @@ env:
   GITHUB_ACTOR: ${{ github.actor}}
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-
-
-
 jobs:
   build-and-upload:
     name: Validação Construção e Upload da Imagem Docker
@@ -95,7 +92,6 @@ jobs:
               BIN=$PWD
               echo "Obtendo template do maven_settings.xml"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$MAVEN_SETTINGS_PATH "${MAVEN_TEMPLATE_URL}" 
-              cat $BIN/$MAVEN_SETTINGS_PATH
           
               echo "Obtendo template do Docker File"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
@@ -114,6 +110,7 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
       - name: Cache Maven Packages
         uses: actions/cache@v4
         with:
@@ -193,15 +190,6 @@ jobs:
       - name: Login no Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Compilar aplicação Maven
-        env:
-          MAVEN_SETTINGS_PATH: ${{ env.MAVEN_SETTINGS_PATH }}
-          MAVEN_POM_PATH: ${{ env.MAVEN_POM_PATH }}
-        run: |
-          mvn -B clean package -DskipTests \
-          -s ${MAVEN_SETTINGS_PATH} \
-          -f ${MAVEN_POM_PATH}
 
       - name: Construir imagem Docker
         env:
@@ -301,10 +289,10 @@ jobs:
           fi
           
           AWS_SECRET_MANAGER_ARN="$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)"
-          echo $AWS_SECRET_MANAGER_ARN
           
           cd iac/kubernetes
 
+          # Desabilitar ingress se INGRESS_HOST estiver vazio
           INGRESS_ENABLED="true"
           if [ -z "${{ env.INGRESS_HOST }}" ]; then
             INGRESS_ENABLED="false"
