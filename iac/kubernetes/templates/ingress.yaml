@@ -11,7 +11,7 @@ metadata:
   {{- if .Values.ingress.annotations }}
   annotations:
     {{- range $k, $v := .Values.ingress.annotations }}
-    {{$k}}: {{ $v | quote }}
+    {{ $k }}: {{ $v | quote }}
     {{- end }}
   {{- end }}
 spec:
