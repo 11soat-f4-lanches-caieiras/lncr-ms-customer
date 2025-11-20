@@ -73,7 +73,7 @@ secretProviderClass:
       - objectName: ${AWS_SECRET_MANAGER_ARN}
         objectType: secretsmanager
   keys:
-    - MONGO_URI
+    - MONGODB_URI
   secretObjects:
     - secretName: customer-secret
       type: Opaque
