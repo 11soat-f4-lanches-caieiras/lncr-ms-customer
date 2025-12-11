@@ -64,7 +64,7 @@ hpa:
 
 #SecretProviderClass
 secretProviderClass:
-  name: "lncr-prd-lncr-ms-customer"
+  name: "lncr-ms-customer-prd-secrets"
   namespace: production
   provider: aws
   parameters:
