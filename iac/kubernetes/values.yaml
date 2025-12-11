@@ -32,6 +32,7 @@ ingress:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
     alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/load-balancer-name: "lncr-prd-int-alb"
     # As anotações abaixo serão definidas via --set-string na pipeline:
     # - alb.ingress.kubernetes.io/load-balancer-name
     # - alb.ingress.kubernetes.io/group.name
