@@ -46,7 +46,6 @@ env:
   LNCR_INTERNAL_URL: ${{ vars.LNCR_INTERNAL_URL }}
 
   #variáveis kubernetes
-  ALB_NAME: ${{ vars.ALB_NAME }}
   INGRESS_HOST: ${{ vars.INGRESS_HOST }}
   MS_NAME: ${{ vars.MS_NAME }}
   # ALB_SUBNETS e ALB_SECURITY_GROUP agora são buscados dinamicamente da AWS
@@ -343,7 +342,6 @@ jobs:
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
-            --set-string ingress.annotations."alb.ingress.kubernetes.io/load-balancer-name"="${{ env.ALB_NAME }}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/group.name"="${{ env.ALB_NAME }}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/subnets"="${ESCAPED_SUBNETS}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${CLUSTER_SG}" \
