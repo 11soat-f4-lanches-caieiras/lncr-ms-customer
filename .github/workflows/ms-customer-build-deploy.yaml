@@ -47,10 +47,9 @@ env:
 
   #variáveis kubernetes
   ALB_NAME: ${{ vars.ALB_NAME }}
-  ALB_SUBNETS: ${{ vars.ALB_SUBNETS }}
-  ALB_SECURITY_GROUP: ${{ vars.ALB_SECURITY_GROUP }}
   INGRESS_HOST: ${{ vars.INGRESS_HOST }}
   MS_NAME: ${{ vars.MS_NAME }}
+  # ALB_SUBNETS e ALB_SECURITY_GROUP agora são buscados dinamicamente da AWS
 
   # secrets pipeline
   LNCR_MAVEN_ACTOR: ${{ secrets.LNCR_MAVEN_ACTOR }}
@@ -289,7 +288,58 @@ jobs:
               IMAGE_TAG="latest"
           fi
           
+          echo "Buscando configurações da AWS..."
+          
+          # Buscar Secret Manager ARN
           AWS_SECRET_MANAGER_ARN="$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)"
+          
+          # Buscar VPC ID do cluster EKS
+          VPC_ID=$(aws eks describe-cluster --name ${{ vars.EKS_CLUSTER }} --region ${{ vars.AWS_DEFAULT_REGION }} --query 'cluster.resourcesVpcConfig.vpcId' --output text)
+          echo "VPC ID: $VPC_ID"
+          
+          # Buscar subnets privadas com as tags corretas para ALB interno
+          # Filtra subnets privadas (MapPublicIpOnLaunch=false) com a tag kubernetes.io/role/internal-elb
+          PRIVATE_SUBNETS=$(aws ec2 describe-subnets \
+            --region ${{ vars.AWS_DEFAULT_REGION }} \
+            --filters "Name=vpc-id,Values=$VPC_ID" \
+                      "Name=map-public-ip-on-launch,Values=false" \
+                      "Name=tag:kubernetes.io/role/internal-elb,Values=1" \
+            --query 'Subnets[*].SubnetId' \
+            --output text | tr '\t' ',')
+          
+          # Se não encontrar com a tag internal-elb, buscar subnets privadas com tag do cluster
+          if [ -z "$PRIVATE_SUBNETS" ]; then
+            echo "Tag internal-elb não encontrada, buscando subnets privadas do cluster..."
+            PRIVATE_SUBNETS=$(aws ec2 describe-subnets \
+              --region ${{ vars.AWS_DEFAULT_REGION }} \
+              --filters "Name=vpc-id,Values=$VPC_ID" \
+                        "Name=map-public-ip-on-launch,Values=false" \
+                        "Name=tag:kubernetes.io/cluster/${{ vars.EKS_CLUSTER }},Values=shared,owned" \
+              --query 'Subnets[*].SubnetId' \
+              --output text | tr '\t' ',')
+          fi
+          
+          echo "Subnets privadas encontradas: $PRIVATE_SUBNETS"
+          
+          # Buscar Security Group do cluster EKS
+          CLUSTER_SG=$(aws eks describe-cluster \
+            --name ${{ vars.EKS_CLUSTER }} \
+            --region ${{ vars.AWS_DEFAULT_REGION }} \
+            --query 'cluster.resourcesVpcConfig.clusterSecurityGroupId' \
+            --output text)
+          
+          echo "Security Group do cluster: $CLUSTER_SG"
+          
+          # Validar se encontrou as configurações necessárias
+          if [ -z "$PRIVATE_SUBNETS" ]; then
+            echo "ERRO: Não foi possível encontrar subnets privadas no VPC $VPC_ID"
+            exit 1
+          fi
+          
+          if [ -z "$CLUSTER_SG" ]; then
+            echo "ERRO: Não foi possível encontrar o Security Group do cluster"
+            exit 1
+          fi
           
           cd iac/kubernetes
 
@@ -299,8 +349,9 @@ jobs:
             INGRESS_ENABLED="false"
           fi
 
-          ESCAPED_SUBNETS=$(printf "%s" "${{ env.ALB_SUBNETS }}" | sed 's/,/\\,/g')
+          ESCAPED_SUBNETS=$(printf "%s" "$PRIVATE_SUBNETS" | sed 's/,/\\,/g')
 
+          echo "Executando Helm deploy..."
           helm upgrade --install ${{ env.MS_NAME }} . \
             --namespace production \
             --create-namespace \
@@ -313,7 +364,9 @@ jobs:
             --set-string ingress.annotations."alb.ingress.kubernetes.io/load-balancer-name"="${{ env.ALB_NAME }}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/group.name"="${{ env.ALB_NAME }}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/subnets"="${ESCAPED_SUBNETS}" \
-            --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${{ env.ALB_SECURITY_GROUP }}" \
+            --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${CLUSTER_SG}" \
             --set secretProviderClass.parameters.objects[0].objectName=${AWS_SECRET_MANAGER_ARN} \
             --set secretProviderClass.parameters.objects[0].objectType=secretsmanager \
             --force
+          
+          echo "Deploy concluído com sucesso!"
