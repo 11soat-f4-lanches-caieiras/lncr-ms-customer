@@ -216,6 +216,7 @@ jobs:
           docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
 
           echo "Imagem enviada para ECR: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG,latest"
+
   approve-after-build:
     name: Manual Approval (after build)
     runs-on: ubuntu-latest
@@ -288,7 +289,8 @@ jobs:
               IMAGE_TAG="latest"
           fi
           
-          AWS_SECRET_MANAGER_ARN="$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)"
+          AWS_SECRET_MANAGER_ARN="arn:aws:secretsmanager:us-east-1:080145351546:secret:lncr-prd-lncr-ms-customer-COgTRX"
+          #AWS_SECRET_MANAGER_ARN="$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)"
           
           cd iac/kubernetes
 
