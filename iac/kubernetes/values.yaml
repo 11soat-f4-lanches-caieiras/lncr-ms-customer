@@ -41,7 +41,7 @@ ingress:
   hosts:
   - host: ""
     paths:
-    - path: /
+    - path: /customers
       pathType: Prefix
   tls: []
 

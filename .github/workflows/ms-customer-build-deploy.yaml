@@ -48,9 +48,8 @@ env:
   #variáveis kubernetes
   INGRESS_HOST: ${{ vars.INGRESS_HOST }}
   MS_NAME: ${{ vars.MS_NAME }}
-  # ALB_SUBNETS e ALB_SECURITY_GROUP agora são buscados dinamicamente da AWS
 
-  # secrets pipeline
+  #secrets pipeline
   LNCR_MAVEN_ACTOR: ${{ secrets.LNCR_MAVEN_ACTOR }}
   LNCR_MAVEN_PAT: ${{ secrets.LNCR_MAVEN_PAT }}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
