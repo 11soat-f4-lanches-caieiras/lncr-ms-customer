@@ -269,7 +269,7 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
 
-      - name: Obter templates kubernetes comuns
+      - name: Obter templates kubernetes
         env:
           IAC_TEMPLATES_PATH : ${{ env.IAC_TEMPLATES_PATH }}
           IAC_KUBERNETES_FILES : ${{ env.IAC_KUBERNETES_FILES }}
@@ -288,7 +288,7 @@ jobs:
               echo "Arquivo $file não encontrado localmente. Baixando do repositório remoto..."
               URL_TEMPLATE_FILE=${IAC_KUBERNETES_TEMPLATES_URL}/$file
               echo "Baixando $file de $URL_TEMPLATE_FILE"
-              curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o "$IAC_IAC_TEMPLATES_PATH/$file" "$URL_TEMPLATE_FILE"
+              curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o "$IAC_TEMPLATES_PATH/$file" "$URL_TEMPLATE_FILE"
             fi
           done
           echo "Processamento de templates concluído."
@@ -368,7 +368,6 @@ jobs:
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
             --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
-            --set-string ingress.annotations."alb.ingress.kubernetes.io/group.name"="${{ env.ALB_NAME }}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/subnets"="${ESCAPED_SUBNETS}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${CLUSTER_SG}" \
             --set secretProviderClass.parameters.objects[0].objectName=${AWS_SECRET_MANAGER_ARN} \
