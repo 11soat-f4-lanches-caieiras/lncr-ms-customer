@@ -277,6 +277,7 @@ jobs:
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
 
         run: |
+          file=echo $file | tr -d '\n' | tr -d '\r'
           echo "Verificando e obtendo templates comuns de Kubernetes: $IAC_KUBERNETES_FILES"
           # Processar cada arquivo da lista
           for file in $IAC_KUBERNETES_FILES; do
@@ -285,7 +286,6 @@ jobs:
               echo "Arquivo $file já existe localmente em iac/kubernetes/templates/, pulando download."
             else
               echo "Arquivo $file não encontrado localmente. Baixando do repositório remoto..."
-              file=echo $file | tr -d '\n' | tr -d '\r'
               URL_TEMPLATE_FILE=${IAC_KUBERNETES_TEMPLATES_URL}/$file
               echo "Baixando $file de $URL_TEMPLATE_FILE"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o "$IAC_IAC_TEMPLATES_PATH/$file" "$URL_TEMPLATE_FILE"
