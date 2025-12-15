@@ -46,7 +46,6 @@ env:
   LNCR_INTERNAL_URL: ${{ vars.LNCR_INTERNAL_URL }}
 
   #variáveis kubernetes
-  INGRESS_HOST: ${{ vars.INGRESS_HOST }}
   MS_NAME: ${{ vars.MS_NAME }}
   IAC_TEMPLATES_PATH: 'iac/kubernetes/templates'
   IAC_KUBERNETES_FILES: ${{ vars.IAC_KUBERNETES_FILES }}
@@ -350,12 +349,6 @@ jobs:
           
           cd iac/kubernetes
 
-          # Configurar ingress
-          INGRESS_ENABLED="true"
-          if [ -z "${{ env.INGRESS_HOST }}" ]; then
-            INGRESS_ENABLED="false"
-          fi
-
           ESCAPED_SUBNETS=$(printf "%s" "$EKS_SUBNETS" | sed 's/,/\\,/g')
 
           echo "Executando Helm deploy..."
@@ -366,7 +359,7 @@ jobs:
             --set app.image.tag="${IMAGE_TAG}"
             --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}"
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}"
-            --set ingress.enabled="${INGRESS_ENABLED}"
+            --set ingress.enabled="true"
             --set-string ingress.annotations."alb.ingress.kubernetes.io/subnets"="${ESCAPED_SUBNETS}"
             --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${CLUSTER_SG}"
             --set secretProviderClass.parameters.objects[0].objectName="${AWS_SECRET_MANAGER_ARN}"
@@ -376,7 +369,6 @@ jobs:
           
           # Só sobrescreve o host se INGRESS_HOST estiver definido
           if [ -n "${{ env.INGRESS_HOST }}" ]; then
-            HELM_ARGS+=(--set ingress.hosts[0].host="${{ env.INGRESS_HOST }}")
             HELM_ARGS+=(--set ingress.hosts[0].paths[0].path="/customers")
             HELM_ARGS+=(--set ingress.hosts[0].paths[0].pathType="Prefix")
           fi

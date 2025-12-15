@@ -38,7 +38,7 @@ ingress:
     # - alb.ingress.kubernetes.io/subnets
     # - alb.ingress.kubernetes.io/security-groups
   hosts:
-  - host: ""
+  - host: "lncr.ingress.br"
     paths:
     - path: /customers
       pathType: Prefix
