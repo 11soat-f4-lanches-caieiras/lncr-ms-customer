@@ -48,6 +48,9 @@ env:
   #variáveis kubernetes
   INGRESS_HOST: ${{ vars.INGRESS_HOST }}
   MS_NAME: ${{ vars.MS_NAME }}
+  IAC_TEMPLATES_PATH: 'iac/kubernetes/templates'
+  IAC_KUBERNETES_FILES: ${{ vars.IAC_KUBERNETES_FILES }}
+  IAC_KUBERNETES_TEMPLATES_URL: ${{ vars.IAC_KUBERNETES_TEMPLATES_URL }}
 
   #secrets pipeline
   LNCR_MAVEN_ACTOR: ${{ secrets.LNCR_MAVEN_ACTOR }}
@@ -265,6 +268,27 @@ jobs:
       - name: Configurar kubectl
         run: |
           aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
+
+      - name: Obter templates kubernetes comuns
+        env:
+          IAC_TEMPLATES_PATH : ${{ env.IAC_TEMPLATES_PATH }}
+          IAC_KUBERNETES_FILES : ${{ env.IAC_KUBERNETES_FILES }}
+          IAC_KUBERNETES_TEMPLATES_URL : ${{ env.IAC_KUBERNETES_TEMPLATES_URL }}
+          LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
+
+        run: |
+          echo "Verificando e obtendo templates comuns de Kubernetes"
+          # Processar cada arquivo da lista
+          for file in IAC_KUBERNETES_FILES; do
+            # Verificar se o arquivo já existe localmente em templates/
+            if [ -f "$IAC_TEMPLATES_PATH/$file" ]; then
+              echo "Arquivo $file já existe localmente em iac/kubernetes/templates/, pulando download."
+            else
+              echo "Arquivo $file não encontrado localmente. Baixando do repositório remoto..."
+              curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o "$IAC_IAC_TEMPLATES_PATH/$file" "${IAC_KUBERNETES_TEMPLATES_URL}/$file"
+            fi
+          done
+          echo "Processamento de templates concluído."
 
       - name: Validar Chart (lint + template)
         run: |
