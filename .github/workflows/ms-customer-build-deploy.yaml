@@ -364,15 +364,11 @@ jobs:
             --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${CLUSTER_SG}"
             --set secretProviderClass.parameters.objects[0].objectName="${AWS_SECRET_MANAGER_ARN}"
             --set secretProviderClass.parameters.objects[0].objectType=secretsmanager
+            --set ingress.hosts[0].paths[0].path="/customers"
+            --set ingress.hosts[0].paths[0].pathType="Prefix"
             --force
           )
-          
-          # Só sobrescreve o host se INGRESS_HOST estiver definido
-          if [ -n "${{ env.INGRESS_HOST }}" ]; then
-            HELM_ARGS+=(--set ingress.hosts[0].paths[0].path="/customers")
-            HELM_ARGS+=(--set ingress.hosts[0].paths[0].pathType="Prefix")
-          fi
-          
+
           helm upgrade --install ${{ env.MS_NAME }} . "${HELM_ARGS[@]}"
           
           echo "Deploy concluído com sucesso!"
