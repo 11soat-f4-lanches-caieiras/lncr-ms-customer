@@ -352,8 +352,11 @@ jobs:
 
           # Desabilitar ingress se INGRESS_HOST estiver vazio
           INGRESS_ENABLED="true"
+          HOST_OVERRIDE=""
           if [ -z "${{ env.INGRESS_HOST }}" ]; then
             INGRESS_ENABLED="false"
+          else
+            HOST_OVERRIDE="--set ingress.hosts[0].host=${{ env.INGRESS_HOST }}"
           fi
 
           ESCAPED_SUBNETS=$(printf "%s" "$EKS_SUBNETS" | sed 's/,/\\,/g')
@@ -367,7 +370,7 @@ jobs:
             --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}" \
             --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
             --set ingress.enabled=${INGRESS_ENABLED} \
-            --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" \
+            ${HOST_OVERRIDE} \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/subnets"="${ESCAPED_SUBNETS}" \
             --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${CLUSTER_SG}" \
             --set secretProviderClass.parameters.objects[0].objectName=${AWS_SECRET_MANAGER_ARN} \
