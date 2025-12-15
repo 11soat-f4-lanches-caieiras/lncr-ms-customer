@@ -277,9 +277,9 @@ jobs:
           LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
 
         run: |
-          echo "Verificando e obtendo templates comuns de Kubernetes"
+          echo "Verificando e obtendo templates comuns de Kubernetes: $IAC_KUBERNETES_FILES"
           # Processar cada arquivo da lista
-          for file in IAC_KUBERNETES_FILES; do
+          for file in $IAC_KUBERNETES_FILES; do
             # Verificar se o arquivo já existe localmente em templates/
             if [ -f "$IAC_TEMPLATES_PATH/$file" ]; then
               echo "Arquivo $file já existe localmente em iac/kubernetes/templates/, pulando download."
