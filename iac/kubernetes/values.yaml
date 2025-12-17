@@ -48,19 +48,19 @@ ingress:
 resources:
   pods:
     requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
       memory: "512Mi"
       cpu: "500m"
-    limits:
-      memory: "1Gi"
-      cpu: "1000m"
 
 #HPA
 hpa:
   enabled: true
-  minReplicas: 2
-  maxReplicas: 8
-  targetCPUUtilizationPercentage: 60
-  targetMemoryUtilizationPercentage: 70
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
 
 #SecretProviderClass
 secretProviderClass:

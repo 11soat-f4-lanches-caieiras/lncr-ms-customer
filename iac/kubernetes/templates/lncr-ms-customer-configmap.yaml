@@ -8,3 +8,13 @@ metadata:
 data:
   LNCR_INTERNAL_URL: {{ .Values.app.internalUrl | quote }}
   LNCR_EXTERNAL_URL: {{ .Values.app.externalUrl | quote }}
+  JAVA_TOOL_OPTIONS: >-
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=75.0
+    -XX:InitialRAMPercentage=50.0
+    -XX:+UseG1GC
+    -XX:MaxGCPauseMillis=100
+    -XX:+UseStringDeduplication
+    -Xss256k
+    -XX:ReservedCodeCacheSize=64m
+    -Djava.security.egd=file:/dev/./urandom
