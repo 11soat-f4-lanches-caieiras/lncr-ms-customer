@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-config
+  
+  labels:
+    app: {{ .Values.app.name }}
+data:
+  LNCR_BASE_URL: {{ .Values.app.baseUrl | quote }}
+  MERCADOPAGO_OAUTH_URL: {{ .Values.app.mercadopago.oauthUrl | quote }}
+  MERCADOPAGO_ORDERS_URL: {{ .Values.app.mercadopago.ordersUrl | quote }}
+  LNCR_EXTERNAL_URL: {{ .Values.app.externalUrl | quote }}
