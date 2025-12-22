@@ -1,4 +1,11 @@
 name: Construir e Upload da Aplicação lncr-ms-customer
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  id-token: write
+
 on:
   repository_dispatch:
     types: [infra-base-completed]
@@ -20,22 +27,31 @@ on:
         type: string
 
 env:
-  #variáveis
+  #variáveis pipeline
   AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+  AWS_ECR_REGISTRY: ${{ vars.AWS_ECR_REGISTRY }}
+  BASE_IMAGE: ${{ vars.BASE_IMAGE }}
   DOCKERFILE_PATH: "${{ vars.MS_DOMAIN }}/Dockerfile"
   DOCKERFILE_TEMPLATE_URL: ${{ vars.DOCKERFILE_TEMPLATE_URL }}
   ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
   EKS_CLUSTER: ${{ vars.EKS_CLUSTER }}
   JACOCO_REPORT_PATH: "${{ vars.MS_DOMAIN }}/target/site/jacoco/jacoco.xml"
-  LNCR_BASE_URL: ${{ vars.LNCR_BASE_URL }}
-  LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
   MAVEN_POM_PATH: "${{ vars.MS_DOMAIN }}/pom.xml"
   MAVEN_SETTINGS_PATH: "${{ vars.MS_DOMAIN }}/maven_settings.xml"
   MAVEN_TEMPLATE_URL: ${{ vars.MAVEN_TEMPLATE_URL }}
   MS_DOMAIN: ${{ vars.MS_DOMAIN }}
 
+  #variáveis da aplicação
+  LNCR_EXTERNAL_URL: ${{ vars.LNCR_EXTERNAL_URL }}
+  LNCR_INTERNAL_URL: ${{ vars.LNCR_INTERNAL_URL }}
 
-  # secrets
+  #variáveis kubernetes
+  MS_NAME: ${{ vars.MS_NAME }}
+  IAC_TEMPLATES_PATH: 'iac/kubernetes/templates'
+  IAC_KUBERNETES_FILES: ${{ vars.IAC_KUBERNETES_FILES }}
+  IAC_KUBERNETES_TEMPLATES_URL: ${{ vars.IAC_KUBERNETES_TEMPLATES_URL }}
+
+  #secrets pipeline
   LNCR_MAVEN_ACTOR: ${{ secrets.LNCR_MAVEN_ACTOR }}
   LNCR_MAVEN_PAT: ${{ secrets.LNCR_MAVEN_PAT }}
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -44,13 +60,10 @@ env:
   GITHUB_ACTOR: ${{ github.actor}}
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-
 jobs:
   build-and-upload:
     name: Validação Construção e Upload da Imagem Docker
-    runs-on: ubuntu-latest
-    #runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
-    #Disparado via repository_dispatch do repositório lncr-iac
+    runs-on: ${{ vars.AWS_CODE_BUILD }}-${{ github.run_id }}-${{ github.run_attempt }}
     if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch') && !inputs.only-helm-deploy }}
     environment:
       name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
@@ -67,6 +80,7 @@ jobs:
 
       - name: Configurar templates Docker e Maven
         env:
+          BASE_IMAGE: ${{ env.BASE_IMAGE }}
           DOCKERFILE_TEMPLATE_URL: ${{ env.DOCKERFILE_TEMPLATE_URL }}
           DOCKERFILE_PATH: ${{ env.DOCKERFILE_PATH }}
           MAVEN_TEMPLATE_URL: ${{ env.MAVEN_TEMPLATE_URL }}
@@ -81,8 +95,13 @@ jobs:
               echo "Obtendo template do Docker File"
               curl -s -H "Authorization: token ${LNCR_MAVEN_PAT}" -o $BIN/$DOCKERFILE_PATH "${DOCKERFILE_TEMPLATE_URL}"
           
-              echo "Configurando Dockerfile para o dominio $MS_DOMAIN"
-              sed -i "s/##MS_DOMAIN##/$MS_DOMAIN/g" $BIN/$DOCKERFILE_PATH
+              if [ -z "$BASE_IMAGE" ]; then
+                BASE_IMAGE="eclipse-temurin:21-jre-alpine"
+                echo "Usando imagem default ${BASE_IMAGE} para o build."
+              fi
+
+              echo "Configurando Dockerfile para o dominio $MS_DOMAIN e imagem base $BASE_IMAGE"
+              sed -i "s/##MS_DOMAIN##/$MS_DOMAIN/g; s/##BASE_IMAGE##/$BASE_IMAGE/g;" $BIN/$DOCKERFILE_PATH
 
       - name: Cache SonarQube packages
         uses: actions/cache@v4
@@ -90,6 +109,13 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Maven Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
       - name: Análise SonarQube
         env:
@@ -121,157 +147,258 @@ jobs:
           else
             echo "Relatório Jacoco não encontrado."
           fi
-#
-#      - name: Login no Docker Hub
-#        uses: docker/login-action@v3
-#        with:
-#          username: ${{ env.DOCKER_USERNAME }}
-#          password: ${{ env.DOCKER_PASSWORD }}
+
+      - name: Validação de Cobertura
+        env:
+          COVERAGE_THRESHOLD: 80.0
+          COVERAGE_PERCENTAGE: ${{ env.COVERAGE_PERCENTAGE }}
+        run: |
+          if [ -z "$COVERAGE_PERCENTAGE" ]; then
+            echo "Porcentagem de cobertura não disponível. Falhando o build."
+            exit 1
+          fi
+          COMP=$(awk "BEGIN {print ($COVERAGE_PERCENTAGE < $COVERAGE_THRESHOLD)}")
+          if [ "$COMP" -eq 1 ]; then
+            echo "Cobertura de código $COVERAGE_PERCENTAGE% é menor que o limite de $COVERAGE_THRESHOLD%. Falhando o build."
+            exit 1
+          else
+           echo "Cobertura de código $COVERAGE_PERCENTAGE% atende ao limite de $COVERAGE_THRESHOLD%."
+          fi
+
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
 #
       - name: Definir Caminhos e Variáveis de Ambiente
         id: set-vars
-        env:
-          DOMAIN: ${{ env.DOMAIN}}
         run: |
           echo "Compondo variáveis de ambiente..."
           COMMIT_HASH=$(git rev-parse --short HEAD)
-          IMAGE_NAME=lncr-$DOMAIN-$COMMIT_HASH
+          IMAGE_NAME=lncr-ms-customer-$COMMIT_HASH
 
           echo "Exportando variáveis de ambiente..."
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
-         
 
           echo "Exportando variáveis de output..."
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_OUTPUT
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_OUTPUT
-#
-#      - name: Login no Amazon ECR
-#        id: login-ecr
-#        uses: aws-actions/amazon-ecr-login@v2
-#
+
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Construir imagem Docker
         env:
             DOCKERFILE_PATH: ${{ env.DOCKERFILE_PATH }}
         run: |
           echo "Criando imagem da aplicação..."
           docker build -t ${{ env.IMAGE_NAME }} -f $DOCKERFILE_PATH .
-#
-#      - name: Marcar imagem para ECR
-#        run: |
-#          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-#          IMAGE_TAG=${{ env.COMMIT_HASH }}
-#
-#          echo "Marcando imagem para ECR..."
-#          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
-#          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
-#
-#          echo "ECR_REGISTRY=$ECR_REGISTRY" >> $GITHUB_ENV
-#
-#      - name: Enviar imagem para ECR
-#        run: |
-#          IMAGE_TAG=${{ env.COMMIT_HASH }}
-#          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
-#          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
-#
-#          echo "Imagem enviada para ECR: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG,latest"
-##  approve-after-build:
-##    name: Manual Approval (after build)
-##    runs-on: ubuntu-latest
-##    needs: build-and-upload
-##    if: ${{ !inputs.only-helm-deploy }}
-##    steps:
-##      - name: Manual Approval
-##        uses: trstringer/manual-approval@v1
-##        with:
-##          secret: ${{ github.TOKEN }}
-##          approvers: gustavo-log,titoparizotto
-##          minimum-approvals: 1
-##          issue-title: "Deploy Infrastructure to Production"
-##          issue-body: "Please approve the deployment of infrastructure changes."
-##
-##  approve-helm-only:
-##    name: Manual Approval (helm only)
-##    runs-on: ubuntu-latest
-##    if: ${{ inputs.only-helm-deploy }}
-##    steps:
-##      - name: Manual Approval
-##        uses: trstringer/manual-approval@v1
-##        with:
-##          secret: ${{ github.token }}
-##          approvers: gustavo-log,titoparizotto
-##          minimum-approvals: 1
-##          issue-title: "Deploy Infrastructure to Production"
-##          issue-body: "Please approve the deployment of infrastructure changes."
-#  deploy:
-#    name: Deploy no Cluster Kubernetes
-#    runs-on: codebuild-github-lncr-app-${{ github.run_id }}-${{ github.run_attempt }}
-#    #needs: [approve-after-build, approve-helm-only]
-#    #if: ${{ always() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
-#    environment:
-#      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
-#    steps:
-#      - name: Fazer checkout do código
-#        uses: actions/checkout@v4
-#
-#      - name: Instalar Helm
-#        run: |
-#          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-#
-#      - name: Configurar kubectl
-#        run: |
-#          aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
-#
-#      - name: Obter subredes do EKS
-#        run: |
-#          EKS_SUBNETS=$(aws eks describe-cluster --name ${{ vars.EKS_CLUSTER }} --query 'cluster.resourcesVpcConfig.subnetIds' --output text | sed 's/\t/--/g')
-#          echo "EKS_SUBNETS=$EKS_SUBNETS" >> $GITHUB_ENV
-#
-#      - name: Deploy com Helm
-#        run: |
-#          COMMIT_HASH="$(git rev-parse --short HEAD)"
-#          ECR_REGISTRY="080145351546.dkr.ecr.us-east-1.amazonaws.com"
-#
-#          printf -v SUBNET_ARG -- '--set-string service.nlb.subnets=%s' "${{ env.EKS_SUBNETS }}"
-#
-#          helm upgrade --install lncr-app ./iac/kubernetes \
-#            --set app.image.repository="$ECR_REGISTRY"/${{ env.ECR_REPOSITORY }} \
-#            --set app.image.tag="$COMMIT_HASH" \
-#            --set app.containerName=lncr-app \
-#            --set app.baseUrl="${{ env.LNCR_BASE_URL }}" \
-#            --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}" \
-#            --set app.mercadopago.oauthUrl="${{ env.MERCADOPAGO_OAUTH_URL }}" \
-#            --set app.mercadopago.ordersUrl="${{ env.MERCADOPAGO_ORDERS_URL }}" \
-#            --set app.mercadopago.secretId="${{ env.MERCADOPAGO_SECRET_ID }}" \
-#            --set app.mercadopago.clientId="${{ env.MERCADOPAGO_CLIENT_ID }}" \
-#            --set app.mercadopago.posId="${{ env.MERCADOPAGO_POS_ID }}" \
-#            $SUBNET_ARG \
-#            --set secrets.oauthAdminClientId="${{ env.LNCR_OAUTH_ADMIN_CLIENT_ID }}"\
-#            --set secrets.oauthAdminClientSecret="${{ env.LNCR_OAUTH_ADMIN_CLIENT_SECRET }}" \
-#            --set secrets.oauthMonitorClientId="${{ env.LNCR_OAUTH_MONITOR_CLIENT_ID }}" \
-#            --set secrets.oauthMonitorClientSecret="${{ env.LNCR_OAUTH_MONITOR_CLIENT_SECRET }}" \
-#            --set secrets.oauthTotemClientId="${{ env.LNCR_OAUTH_TOTEM_CLIENT_ID }}" \
-#            --set secrets.oauthTotemClientSecret="${{ env.LNCR_OAUTH_TOTEM_CLIENT_SECRET }}" \
-#            --set secrets.oauthSecretKey="${{ env.LNCR_OAUTH_SECRET_KEY }}" \
-#            --set secrets.mercadopagoClientId="${{ env.MERCADOPAGO_CLIENT_ID }}" \
-#            --set secrets.mercadopagoSecretId="${{ env.MERCADOPAGO_SECRET_ID }}" \
-#            --set secrets.mercadopagoPosId="${{ env.MERCADOPAGO_POS_ID }}" \
-#            --set secrets.postgresUrl="${{ env.POSTGRES_URL }}" \
-#            --set secrets.postgresUser="${{ env.POSTGRES_USER }}" \
-#            --set secrets.postgresPassword="${{ env.POSTGRES_PASSWORD }}" \
-#            --set app.name=lncr-app \
-#            --namespace fiap --create-namespace \
-#            --force
-#
-#      - name: Trigger lncr-iac-configuration deployment
-#        uses: peter-evans/repository-dispatch@v2
-#        if: github.event_name == 'repository_dispatch'
-#        with:
-#          token: ${{ secrets.REPO_TOKEN}}
-#          repository: 11soat-f3-lanches-caieiras/lncr-iac
-#          event-type: infra-iac-completed
-#          client-payload: |
-#            {
-#              "branch": "${{ github.ref_name }}",
-#              "commit": "${{ github.sha }}"
-#            }
+
+      - name: Marcar imagem para ECR
+        run: |
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG=${{ env.COMMIT_HASH }}
+
+          echo "Marcando imagem para ECR..."
+          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          docker tag ${{ env.IMAGE_NAME }} $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest
+
+          echo "ECR_REGISTRY=$ECR_REGISTRY" >> $GITHUB_ENV
+
+      - name: Enviar imagem para ECR
+        run: |
+          IMAGE_TAG=${{ env.COMMIT_HASH }}
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+
+          echo "Imagem enviada para ECR: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG,latest"
+
+  approve-after-build:
+    name: Manual Approval (after build)
+    runs-on: ubuntu-latest
+    needs: build-and-upload
+    if: ${{ !inputs.only-helm-deploy }}
+    steps:
+      - name: Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: gustavo-log,titoparizotto
+          minimum-approvals: 1
+
+  approve-helm-only:
+    name: Manual Approval (helm only)
+    runs-on: ubuntu-latest
+    if: ${{ inputs.only-helm-deploy }}
+    steps:
+      - name: Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: gustavo-log,titoparizotto
+          minimum-approvals: 1
+          issue-title: "Deploy Infrastructure to Production"
+          issue-body: "Please approve the deployment of infrastructure changes."
+    environment:
+      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
+
+  helm-deploy-after-approve:
+    name: Deploy com Helm
+    needs: [approve-helm-only, approve-after-build]
+    if: ${{ always() && (needs.approve-after-build.result == 'success' || needs.approve-helm-only.result == 'success') }}
+    runs-on: ${{ vars.AWS_CODE_BUILD }}-${{ github.run_id }}-${{ github.run_attempt }}
+    environment:
+      name: ${{ github.ref_name == 'master' && 'prd' || 'dev' }}
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Instalar Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Configurar kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ vars.AWS_DEFAULT_REGION }} --name ${{ vars.EKS_CLUSTER }}
+
+      - name: Obter templates kubernetes
+        env:
+          IAC_TEMPLATES_PATH : ${{ env.IAC_TEMPLATES_PATH }}
+          IAC_KUBERNETES_FILES : ${{ env.IAC_KUBERNETES_FILES }}
+          IAC_KUBERNETES_TEMPLATES_URL : ${{ env.IAC_KUBERNETES_TEMPLATES_URL }}
+          LNCR_MAVEN_PAT: ${{ env.LNCR_MAVEN_PAT }}
+
+        run: |
+          # Validar variáveis obrigatórias
+          if [ -z "$IAC_TEMPLATES_PATH" ]; then
+            echo "ERRO: Variável IAC_TEMPLATES_PATH não está definida ou está vazia."
+            exit 1
+          fi
+
+          if [ -z "$IAC_KUBERNETES_FILES" ]; then
+            echo "ERRO: Variável IAC_KUBERNETES_FILES não está definida ou está vazia."
+            exit 1
+          fi
+
+          if [ -z "$IAC_KUBERNETES_TEMPLATES_URL" ]; then
+            echo "ERRO: Variável IAC_KUBERNETES_TEMPLATES_URL não está definida ou está vazia."
+            exit 1
+          fi
+
+          # Criar diretório de templates se não existir
+          mkdir -p "$IAC_TEMPLATES_PATH"
+
+          echo "Verificando e obtendo templates comuns de Kubernetes: $IAC_KUBERNETES_FILES"
+          
+          # Processar cada arquivo da lista
+          for file in $IAC_KUBERNETES_FILES; do
+            # Limpar caracteres especiais
+            file=$(echo "$file" | tr -d '\n' | tr -d '\r')
+            
+            # Verificar se o arquivo já existe localmente em templates/
+            if [ -f "$IAC_TEMPLATES_PATH/$file" ]; then
+              echo "Arquivo $file já existe localmente em iac/kubernetes/templates/, pulando download."
+            else
+              echo "Arquivo $file não encontrado localmente. Baixando do repositório remoto..."
+              URL_TEMPLATE_FILE=${IAC_KUBERNETES_TEMPLATES_URL}/$file
+              echo "Baixando $file de $URL_TEMPLATE_FILE"
+              
+              # Baixar arquivo e validar sucesso
+              if curl -s -f -H "Authorization: token ${LNCR_MAVEN_PAT}" -o "$IAC_TEMPLATES_PATH/$file" "$URL_TEMPLATE_FILE"; then
+                echo "✓ Arquivo $file baixado com sucesso."
+              else
+                echo "ERRO: Falha ao baixar o arquivo $file de $URL_TEMPLATE_FILE"
+                exit 1
+              fi
+            fi
+          done
+          
+          echo "Processamento de templates concluído."
+
+      - name: Validar Chart (lint + template)
+        run: |
+          cd iac/kubernetes
+          helm lint .
+          helm template dryrun . \
+            --set ingress.enabled=true \
+            --set ingress.hosts[0].host="${{ env.INGRESS_HOST }}" | awk '/kind: Ingress/{flag=1} flag{print} /kind: SecretProviderClass/{flag=0}'
+          echo "Renderizacao ingress OK se annotations listadas como chave: \"valor\""
+
+      - name: Deploy com Helm
+        run: |
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          COMMIT_HASH="$(git rev-parse --short HEAD)"
+          IMAGE_TAG="${COMMIT_HASH}"
+    
+          # Se for deploy apenas do Helm, usar a tag 'latest'
+          if [ "${{ inputs.only-helm-deploy }}" = "true" ]; then
+              IMAGE_TAG="latest"
+          fi
+          
+          echo "Buscando configurações da AWS..."
+          
+          # Buscar Secret Manager ARN
+          AWS_SECRET_MANAGER_ARN="$(aws secretsmanager list-secrets --region ${{ vars.AWS_DEFAULT_REGION }} --query "SecretList[?contains(Name, '${{ env.MS_NAME }}-prd-secret')].ARN | [0]" --output text)"
+          
+          # Buscar subnets diretamente do cluster EKS
+          echo "Buscando subnets do cluster EKS..."
+          EKS_SUBNETS=$(aws eks describe-cluster \
+            --name ${{ vars.EKS_CLUSTER }} \
+            --region ${{ vars.AWS_DEFAULT_REGION }} \
+            --query 'cluster.resourcesVpcConfig.subnetIds' \
+            --output text | tr '\t' ',')
+          
+          echo "Subnets do cluster EKS: $EKS_SUBNETS"
+          
+          # Buscar Security Group do cluster EKS
+          CLUSTER_SG=$(aws eks describe-cluster \
+            --name ${{ vars.EKS_CLUSTER }} \
+            --region ${{ vars.AWS_DEFAULT_REGION }} \
+            --query 'cluster.resourcesVpcConfig.clusterSecurityGroupId' \
+            --output text)
+          
+          echo "Security Group do cluster: $CLUSTER_SG"
+          
+          # Validar se encontrou as configurações necessárias
+          if [ -z "$EKS_SUBNETS" ]; then
+            echo "ERRO: Não foi possível encontrar subnets do cluster EKS"
+            exit 1
+          fi
+          
+          if [ -z "$CLUSTER_SG" ]; then
+            echo "ERRO: Não foi possível encontrar o Security Group do cluster"
+            exit 1
+          fi
+          
+          cd iac/kubernetes
+
+          ESCAPED_SUBNETS=$(printf "%s" "$EKS_SUBNETS" | sed 's/,/\\,/g')
+
+          echo "Executando Helm deploy..."
+          HELM_ARGS=(
+            --namespace production
+            --create-namespace
+            --set app.image.repository="${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}"
+            --set app.image.tag="${IMAGE_TAG}"
+            --set app.internalUrl="${{ env.LNCR_INTERNAL_URL }}"
+            --set app.externalUrl="${{ env.LNCR_EXTERNAL_URL }}"
+            --set ingress.enabled="true"
+            --set-string ingress.annotations."alb.ingress.kubernetes.io/subnets"="${ESCAPED_SUBNETS}"
+            --set-string ingress.annotations."alb.ingress.kubernetes.io/security-groups"="${CLUSTER_SG}"
+            --set secretProviderClass.parameters.objects[0].objectName="${AWS_SECRET_MANAGER_ARN}"
+            --set secretProviderClass.parameters.objects[0].objectType=secretsmanager
+            --set ingress.hosts[0].paths[0].path="/customers"
+            --set ingress.hosts[0].paths[0].pathType="Prefix"
+            --force
+          )
+
+          helm upgrade --install ${{ env.MS_NAME }} . "${HELM_ARGS[@]}"
+          
+          echo "Deploy concluído com sucesso!"

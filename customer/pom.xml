@@ -41,11 +41,7 @@
         <!--suppress UnresolvedMavenProperty -->
         <sonar.token>${SONAR_TOKEN}</sonar.token>
         <sonar.scm.disabled>true</sonar.scm.disabled>
-        <sonar.coverage.exclusions>
-            br.com.tp.lncr.customer.apis.CustomerRestController,
-            br.com.tp.lncr.customer.configs.CustomerConfig,
-            br.com.tp.lncr.customer.datasource.mongo.MongoCustomerRepository
-        </sonar.coverage.exclusions>
+        <sonar.coverage.exclusions>br.com.tp.lncr.customer.configs</sonar.coverage.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>
             target/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
@@ -141,7 +137,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

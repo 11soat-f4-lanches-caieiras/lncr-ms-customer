@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "lncr.customer")
 public class CustomerConfig {
     private String locationPrefix;
-
-    private CustomerConfig() {}
     public String getLocationPrefix() {
         return locationPrefix;
     }

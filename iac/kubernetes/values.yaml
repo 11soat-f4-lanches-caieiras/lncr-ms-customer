@@ -1,72 +1,82 @@
 #valores padrões para o Helm Chart
 
+#ServiceAccount
+serviceAccount:
+  name: secrets-sa
+
 #Aplicação
 app:
-  name: lncr-app
-  replicas: 2  # Aumentando réplicas padrão
+  name: customer
+  replicas: 1
   image:
     repository: ${AWS_ECR_REPOSITORY}
     tag: latest
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
   port: 8080
-  containerName: lncr-app
-  baseUrl: ${LNCR_BASE_URL}
+  containerName: customer
+  internalUrl: ${LNCR_INTERNAL_URL}
   externalUrl: ${LNCR_EXTERNAL_URL}
-  mercadopago:
-    oauthUrl: ${MERCADOPAGO_OAUTH_URL}
-    ordersUrl: ${MERCADOPAGO_ORDERS_URL}
-    clientId: ${MERCADOPAGO_CLIENT_ID}
-    secretId: ${MERCADOPAGO_SECRET_ID}
-    posId: ${MERCADOPAGO_POS_ID}
 
+#Service
 service:
-  nlb:
-    type: LoadBalancer
-    loadBalancerClass: service.k8s.aws/nlb
-    port: 80
-    targetPort: 8080
-    protocol: TCP
-    name: http
-    subnets: ${EKS_SUBNETS}
+  port: 80
+  targetPort: 8080
 
-
-#Storage
-storage:
-  fsx:
-    server: "10.1.39.161" 
-    path: "/fsx"  
+#Ingress
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+    alb.ingress.kubernetes.io/load-balancer-name: "lncr-prd-int-alb"
+    alb.ingress.kubernetes.io/group.name: "lncr-prd-internal"
+    # As anotações abaixo serão definidas via --set-string na pipeline:
+    # - alb.ingress.kubernetes.io/subnets
+    # - alb.ingress.kubernetes.io/security-groups
+  hosts:
+  - paths:
+    - path: /customers
+      pathType: Prefix
+  tls: []
 
 
 #Deployment
 resources:
-  lanchesCaieirasApp:
+  pods:
     requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
       memory: "512Mi"
       cpu: "500m"
-    limits:
-      memory: "1Gi"
-      cpu: "1000m"
 
 #HPA
 hpa:
   enabled: true
-  minReplicas: 2
-  maxReplicas: 8
-  targetCPUUtilizationPercentage: 60
-  targetMemoryUtilizationPercentage: 70
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
 
-#Secrets
-secrets:
-  oauthAdminClientId: ${LNCR_OAUTH_ADMIN_CLIENT_ID}
-  oauthAdminClientSecret: ${LNCR_OAUTH_ADMIN_CLIENT_SECRET}
-  oauthMonitorClientId: ${LNCR_OAUTH_MONITOR_CLIENT_ID}
-  oauthMonitorClientSecret: ${LNCR_OAUTH_MONITOR_CLIENT_SECRET}
-  oauthTotemClientId: ${LNCR_OAUTH_TOTEM_CLIENT_ID}
-  oauthTotemClientSecret: ${LNCR_OAUTH_TOTEM_CLIENT_SECRET}
-  oauthSecretKey: ${LNCR_OAUTH_SECRET_KEY}
-  mercadopagoClientId: ${MERCADOPAGO_CLIENT_ID}
-  mercadopagoSecretId: ${MERCADOPAGO_SECRET_ID}
-  mercadopagoPosId: ${MERCADOPAGO_POS_ID}
-  postgresUrl: ${POSTGRES_URL}
-  postgresPassword: ${POSTGRES_PASSWORD}
-  postgresUser: ${POSTGRES_USER}
+#SecretProviderClass
+secretProviderClass:
+  name: "lncr-ms-customer-prd-secrets"
+  namespace: production
+  provider: aws
+  parameters:
+    region: "us-east-1"
+    objects:
+      - objectName: ${AWS_SECRET_MANAGER_ARN}
+        objectType: secretsmanager
+  keys:
+    - MONGODB_URI
+  secretObjects:
+    - secretName: customer-secret
+      type: Opaque
+  twoSecrets:
+    enabled: false
+deploySecretName: customer-secret
