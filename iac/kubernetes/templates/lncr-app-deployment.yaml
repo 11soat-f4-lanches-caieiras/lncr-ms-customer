@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-deployment
+  labels:
+    app: {{ .Values.app.name }}
+spec:
+  replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+    spec:
+      tolerations:
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: {{ .Values.app.containerName}}
+          image: "{{ .Values.app.image.repository }}{{- if .Values.app.image.tag }}:{{ .Values.app.image.tag }}{{- end }}"
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.app.port }}
+          env:
+            #configMap
+            - name: LNCR_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.app.name }}-config
+                  key: LNCR_BASE_URL
+            - name: LNCR_EXTERNAL_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.app.name }}-config
+                  key: LNCR_EXTERNAL_URL
+            - name: MERCADOPAGO_OAUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.app.name }}-config
+                  key: MERCADOPAGO_OAUTH_URL
+            - name: MERCADOPAGO_ORDERS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.app.name }}-config
+                  key: MERCADOPAGO_ORDERS_URL
+            #secrets
+            - name: LNCR_OAUTH_ADMIN_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: LNCR_OAUTH_ADMIN_CLIENT_ID
+            - name: LNCR_OAUTH_ADMIN_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: LNCR_OAUTH_ADMIN_CLIENT_SECRET
+            - name: LNCR_OAUTH_MONITOR_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: LNCR_OAUTH_MONITOR_CLIENT_ID
+            - name: LNCR_OAUTH_MONITOR_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: LNCR_OAUTH_MONITOR_CLIENT_SECRET
+            - name: LNCR_OAUTH_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: LNCR_OAUTH_SECRET_KEY
+            - name: LNCR_OAUTH_TOTEM_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: LNCR_OAUTH_TOTEM_CLIENT_ID
+            - name: LNCR_OAUTH_TOTEM_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: LNCR_OAUTH_TOTEM_CLIENT_SECRET
+            - name: MERCADOPAGO_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: MERCADOPAGO_CLIENT_ID
+            - name: MERCADOPAGO_POS_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: MERCADOPAGO_POS_ID
+            - name: MERCADOPAGO_SECRET_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: MERCADOPAGO_SECRET_ID
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: POSTGRES_URL
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-secret
+                  key: POSTGRES_USER
+          volumeMounts:
+            - name: images-storage
+              mountPath: /app/images
+          resources:
+            requests:
+              memory: {{ .Values.resources.lanchesCaieirasApp.requests.memory }}
+              cpu: {{ .Values.resources.lanchesCaieirasApp.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.lanchesCaieirasApp.limits.memory }}
+              cpu: {{ .Values.resources.lanchesCaieirasApp.limits.cpu }}
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: images-storage
+          nfs:
+            server: {{ .Values.storage.fsx.server }}
+            path: {{ .Values.storage.fsx.path }}
