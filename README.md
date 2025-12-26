@@ -29,7 +29,7 @@ Microserviço responsável pelo gerenciamento de **Clientes** no sistema Lanches
 
 ## Sonar Quality Gate
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=11soat-f4-lanches-caieiras_lncr-ms-customer&metric=alert_status)](https://sonarcloud.io/project/overview?id=11soat-f4-lanches-caieiras_lncr-ms-customer)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=11soat-f4-lanches-caieiras_lncr-ms-customer&metric=alert_status&token=8d60bc089977798793df05d1d9e65ca429958799)](https://sonarcloud.io/summary/new_code?id=11soat-f4-lanches-caieiras_lncr-ms-customer)
 
 Acesse o dashboard completo: [SonarCloud - lncr-ms-customer](https://sonarcloud.io/project/overview?id=11soat-f4-lanches-caieiras_lncr-ms-customer)
 
